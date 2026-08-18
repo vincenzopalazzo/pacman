@@ -1,0 +1,11 @@
+.{
+    .name = .pacman,
+    .version = "0.1.0",
+    .fingerprint = 0xa1c2e4b8ee1fd5d2,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{},
+    .paths = .{
+        "src",
+        "openspec",
+    },
+}
