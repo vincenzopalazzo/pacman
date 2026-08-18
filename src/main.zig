@@ -153,6 +153,7 @@ pub fn main() !void {
                                 state.tiles[new_iy][new_ix].entity = .empty;
                                 score += 10;
                                 state.score = score;
+                                state.dots_remaining -= 1;
                             } else if (state.tiles[new_iy][new_ix].entity == .power_pellet) {
                                 state.tiles[new_iy][new_ix].entity = .empty;
                                 score += 50;
@@ -164,6 +165,14 @@ pub fn main() !void {
                 }
             }
         }
+
+        if (state.dots_remaining == 0) {
+            try pacman.tui.renderWin(stdout_writer, score, pacman.tui.default_palette);
+            _ = try std.posix.read(stdin_fd, &buf);
+            running = false;
+            continue;
+        }
+
         try std.Io.sleep(io, .{ .nanoseconds = 16_000_000 }, .awake);
     }
 }

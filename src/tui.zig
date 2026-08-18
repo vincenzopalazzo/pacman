@@ -259,6 +259,59 @@ pub fn renderGameOver(writer: anytype, score: u32, palette: Palette) !void {
     try writer.print("{s}", .{ showCursor() });
 }
 
+pub fn renderWin(writer: anytype, score: u32, palette: Palette) !void {
+    var buf: [64]u8 = undefined;
+    try writer.print("{s}{s}", .{ reset(), try palette.bg.formatBg(&buf) });
+    try writer.print("{s}", .{ clearScreen() });
+    try writer.print("{s}", .{ hideCursor() });
+
+    const title = "YOU WIN!";
+    const border_len = title.len + 20;
+    var i: usize = 0;
+    try writer.print("\n\n\n  {s}", .{try palette.border.formatFg(&buf)});
+    while (i < border_len) : (i += 1) {
+        try writer.print("═", .{});
+    }
+    try writer.print("{s}\n", .{try palette.text.formatFg(&buf)});
+
+    i = 0;
+    try writer.print("  {s}", .{try palette.border.formatFg(&buf)});
+    while (i < border_len) : (i += 1) {
+        try writer.print("║", .{});
+    }
+    try writer.print("{s}\n", .{try palette.text.formatFg(&buf)});
+
+    try writer.print("  {s}║{s} {s}{s}{s} {s}║{s}\n", .{
+        try palette.border.formatFg(&buf),
+        try palette.text_dim.formatFg(&buf),
+        try palette.accent.formatFg(&buf),
+        title,
+        try palette.text_dim.formatFg(&buf),
+        try palette.border.formatFg(&buf),
+        try palette.text.formatFg(&buf),
+    });
+
+    i = 0;
+    try writer.print("  {s}", .{try palette.border.formatFg(&buf)});
+    while (i < border_len) : (i += 1) {
+        try writer.print("║", .{});
+    }
+    try writer.print("{s}\n\n", .{try palette.text.formatFg(&buf)});
+
+    i = 0;
+    try writer.print("  {s}", .{try palette.border.formatFg(&buf)});
+    while (i < border_len) : (i += 1) {
+        try writer.print("═", .{});
+    }
+    try writer.print("{s}\n", .{try palette.text.formatFg(&buf)});
+
+    try writer.print("  {s}Final Score: {s}{d}{s}\n", .{ try palette.text.formatFg(&buf), try palette.text_bright.formatFg(&buf), score, try palette.text.formatFg(&buf) });
+    try writer.print("  {s}Press any key to exit...{s}\n", .{ try palette.text_dim.formatFg(&buf), try palette.text.formatFg(&buf) });
+
+    try writer.print("{s}", .{ reset() });
+    try writer.print("{s}", .{ showCursor() });
+}
+
 fn reset() []const u8 { return "\x1b[0m"; }
 fn clearScreen() []const u8 { return "\x1b[2J\x1b[H"; }
 fn hideCursor() []const u8 { return "\x1b[?25l"; }
