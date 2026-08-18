@@ -18,7 +18,7 @@ pub fn main() !void {
     _ = std.c.tcgetattr(stdin_fd, &original_termios);
     var raw = original_termios;
     var lflag: u64 = @bitCast(raw.lflag);
-    lflag &= ~(@as(u64, 0x8) | @as(u64, 0x100));
+    lflag &=  ~(@as(u64, 0x8) | @as(u64, 0x100));
     const tc_lflag_type = std.c.tc_lflag_t;
     raw.lflag = lflag: {
         const result: tc_lflag_type = @bitCast(lflag);
@@ -37,59 +37,101 @@ pub fn main() !void {
         gpa.free(state.tiles);
     }
 
+    var ghosts_ai: [4]pacman.ai.GhostAI = undefined;
+    const personalities = pacman.ai.getDefaultPersonalities();
+    for (personalities, 0..) |p, i| {
+        ghosts_ai[i] = pacman.ai.GhostAI.init(p);
+    }
+
+    const ghost_start_x = [4]f32{ 6.0, 6.0, 21.0, 21.0 };
+    const ghost_start_y = [4]f32{ 11.0, 13.0, 11.0, 13.0 };
+    var g: usize = 0;
+    while (g < 4) : (g += 1) {
+        state.ghosts[g].x = ghost_start_x[g];
+        state.ghosts[g].y = ghost_start_y[g];
+    }
+
     var running = true;
+    var paused = false;
     var score: u32 = 0;
-    const lives: usize = 3;
+    var lives: u8 = 3;
+    var tick: u32 = 0;
+    var anim = pacman.tui.AnimationState.init();
 
-    while (running) {
-        try stdout_writer.print("\x1b[H\x1b[J", .{});
-        try stdout_writer.print("Pac-Man (Zig) - Arrow keys to move, Q to quit\n", .{});
-        try stdout_writer.print("Score: {}  Lives: {}  Level: 1\n", .{score, lives});
-        try stdout_writer.print("\n", .{});
-
-        var y: usize = 0;
-        while (y < state.tiles.len) : (y += 1) {
-            var line_buf: [64]u8 = undefined;
-            var line_len: usize = 0;
-            var x: usize = 0;
-            while (x < state.tiles[y].len) : (x += 1) {
-                const px: usize = @as(usize, @intFromFloat(state.pacman.x));
-                const py: usize = @as(usize, @intFromFloat(state.pacman.y));
-                var ch: u8 = ' ';
-                if (x == px and y == py) {
-                    ch = 'C';
-                } else {
-                    var g: usize = 0;
-                    while (g < state.ghosts.len) : (g += 1) {
-                        const gx: usize = @as(usize, @intFromFloat(state.ghosts[g].x));
-                        const gy: usize = @as(usize, @intFromFloat(state.ghosts[g].y));
-                        if (x == gx and y == gy) {
-                            ch = 'G';
-                            break;
-                        }
-                    }
-                    if (ch == ' ') {
-                        ch = switch (state.tiles[y][x].entity) {
-                            .wall => '#',
-                            .dot => '.',
-                            .power_pellet => 'O',
-                            else => ' ',
-                        };
-                    }
+    while (running) : (tick += 1) {
+        if (paused) {
+            try pacman.tui.renderFrame(stdout_writer, &state, &anim, pacman.tui.default_palette);
+            var buf: [8]u8 = undefined;
+            const bytes_read = try std.posix.read(stdin_fd, &buf);
+            if (bytes_read > 0) {
+                if (buf[0] == 'q' or buf[0] == 'Q') {
+                    running = false;
+                } else if (buf[0] == 'p' or buf[0] == 'P') {
+                    paused = false;
                 }
-                line_buf[line_len] = ch;
-                line_len += 1;
             }
-            try stdout_writer.writeAll(line_buf[0..line_len]);
-            try stdout_writer.writeAll("\n");
+            continue;
         }
-        try stdout.flush();
+        g = 0;
+        while (g < 4) : (g += 1) {
+            if (state.frightened_timer > 0) {
+                ghosts_ai[g].frightened = true;
+            } else {
+                ghosts_ai[g].frightened = false;
+            }
+            try ghosts_ai[g].decideDirection(gpa, &state, g, tick);
+            ghosts_ai[g].moveGhost(&state, g, if (ghosts_ai[g].frightened) 0.5 else 1.0);
+        }
+
+        var collided = false;
+        g = 0;
+        while (g < 4) : (g += 1) {
+            const dx = state.ghosts[g].x - state.pacman.x;
+            const dy = state.ghosts[g].y - state.pacman.y;
+            if (dx * dx + dy * dy < 1.0) {
+                    if (ghosts_ai[g].frightened) {
+                        ghosts_ai[g].direction = pacman.game.Direction.none;
+                        state.ghosts[g].x = ghost_start_x[g];
+                        state.ghosts[g].y = ghost_start_y[g];
+                        score += 200;
+                        state.score = score;
+                    } else {
+                    collided = true;
+                }
+            }
+        }
+        if (collided) {
+            lives -= 1;
+            if (lives == 0) {
+                try pacman.tui.renderGameOver(stdout_writer, score, pacman.tui.default_palette);
+                var buf: [8]u8 = undefined;
+                _ = try std.posix.read(stdin_fd, &buf);
+                running = false;
+            } else {
+                state.pacman.x = 14.0;
+                state.pacman.y = 23.0;
+                var gi: usize = 0;
+                while (gi < 4) : (gi += 1) {
+                    state.ghosts[gi].x = ghost_start_x[gi];
+                    state.ghosts[gi].y = ghost_start_y[gi];
+                }
+            }
+        }
+
+        if (state.frightened_timer > 0) {
+            state.frightened_timer -= 1;
+        }
+
+        anim.update();
+        try pacman.tui.renderFrame(stdout_writer, &state, &anim, pacman.tui.default_palette);
 
         var buf: [8]u8 = undefined;
         const bytes_read = try std.posix.read(stdin_fd, &buf);
         if (bytes_read > 0) {
             if (buf[0] == 'q' or buf[0] == 'Q') {
                 running = false;
+            } else if (buf[0] == 'p' or buf[0] == 'P') {
+                paused = true;
             } else if (buf[0] == '\x1b') {
                 if (bytes_read >= 3 and buf[1] == '[') {
                     var dx: i32 = 0;
@@ -111,11 +153,17 @@ pub fn main() !void {
                                 state.tiles[new_iy][new_ix].entity = .empty;
                                 score += 10;
                                 state.score = score;
+                            } else if (state.tiles[new_iy][new_ix].entity == .power_pellet) {
+                                state.tiles[new_iy][new_ix].entity = .empty;
+                                score += 50;
+                                state.score = score;
+                                state.frightened_timer = 300;
                             }
                         }
                     }
                 }
             }
         }
+        try std.Io.sleep(io, .{ .nanoseconds = 16_000_000 }, .awake);
     }
 }

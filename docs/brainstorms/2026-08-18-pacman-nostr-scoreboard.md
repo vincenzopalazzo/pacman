@@ -1,6 +1,6 @@
 ## Clarified Problem Statement
 
-**Goal:** Build a classic Pac-Man game in Zig (single-player, extensible to local/remote multiplayer) with a general Nostr-based scoreboard system, using openspec.dev for specification and a personal code-style dataset for formatting alignment. The game must feature a modern, super cool TUI (Text User Interface) inspired by OpenCode's TUI — not a simple CLI — with rich visuals, animations, and polished terminal UX.
+**Goal:** Build a classic Pac-Man game in Zig (single-player, extensible to local/remote multiplayer) with a general Nostr-based scoreboard system, using openspec.dev for specification and a personal code-style dataset for formatting alignment. The game must feature a modern, super cool TUI (Text User Interface) inspired by OpenCode's TUI — definitely NOT a simple CLI — with rich visuals, animations, and polished terminal UX.
 
 **Constraints:**
 - Zig (latest stable version)
@@ -25,7 +25,7 @@
 - Relay board that indexes scores by game + user
 - Openspec specs/decisions/tasks/ scaffolded and used
 - Code formatted per personal style dataset
-- Super cool TUI with modern terminal UX (inspired by OpenCode)
+- Super cool TUI with modern terminal UX (explicitly inspired by OpenCode's TUI — NOT a simple CLI)
 
 ## Approaches Considered
 
@@ -66,7 +66,7 @@ Reasoning: NIP-64 proves the pattern (kind-based game events) works. A new, gene
 ## TUI Design Plan
 
 ### Objective
-Replace the basic terminal rendering with a super cool, modern TUI inspired by OpenCode's interface — featuring rich colors, smooth animations, side panels, and polished terminal UX.
+Replace the basic terminal rendering with a super cool, modern TUI explicitly inspired by OpenCode's interface — featuring rich colors, smooth animations, side panels, and polished terminal UX. This is NOT a simple CLI. The TUI should feel like a modern desktop app running in the terminal, with proper layout management, keyboard-driven navigation, status bars, and interactive elements.
 
 ### Approach
 - **Phase 1: Enhanced Rendering Layer**
