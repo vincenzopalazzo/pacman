@@ -79,7 +79,7 @@ pub fn main() !void {
             } else {
                 ghosts_ai[g].frightened = false;
             }
-            try ghosts_ai[g].decideDirection(gpa, &state, g, tick);
+            try ghosts_ai[g].decideDirection(&state, g, tick);
             ghosts_ai[g].moveGhost(&state, g, if (ghosts_ai[g].frightened) 0.5 else 1.0);
         }
 

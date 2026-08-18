@@ -29,7 +29,6 @@ pub const GhostAI = struct {
 
     pub fn decideDirection(
         self: *GhostAI,
-        allocator: std.mem.Allocator,
         state: *const game.GameState,
         ghost_index: usize,
         tick: u32,
@@ -48,8 +47,31 @@ pub const GhostAI = struct {
             self.target_y = py + (gy - py) * bias;
         }
 
-        const possible_dirs = try self.getPossibleDirections(allocator, state, ghost_index);
-        defer allocator.free(possible_dirs);
+        const possible_dirs = blk: {
+            var dirs_buf: [4]game.Direction = undefined;
+            var dirs_len: usize = 0;
+            const dirs_to_check = [_]game.Direction{
+                game.Direction.up,
+                game.Direction.down,
+                game.Direction.left,
+                game.Direction.right,
+            };
+            for (dirs_to_check) |dir| {
+                const dx = dxFor(dir);
+                const dy = dyFor(dir);
+                const nx = gx + dx;
+                const ny = gy + dy;
+                const ix: usize = @as(usize, @intFromFloat(nx));
+                const iy: usize = @as(usize, @intFromFloat(ny));
+                if (iy > 0 and iy < state.tiles.len and ix > 0 and ix < state.tiles[0].len) {
+                    if (state.tiles[iy][ix].entity != .wall) {
+                        dirs_buf[dirs_len] = dir;
+                        dirs_len += 1;
+                    }
+                }
+            }
+            break :blk dirs_buf[0..dirs_len];
+        };
 
         if (possible_dirs.len == 0) return;
 
@@ -92,42 +114,6 @@ pub const GhostAI = struct {
                 state.ghosts[ghost_index].y = new_y;
             }
         }
-    }
-
-    fn getPossibleDirections(
-        _: *GhostAI,
-        allocator: std.mem.Allocator,
-        state: *const game.GameState,
-        ghost_index: usize,
-    ) ![]const game.Direction {
-        const gx = state.ghosts[ghost_index].x;
-        const gy = state.ghosts[ghost_index].y;
-        var dirs = std.ArrayList(game.Direction).initCapacity(allocator, 4) catch return &[0]game.Direction{};
-        errdefer dirs.deinit(allocator);
-
-        const dirs_to_check = [_]game.Direction{
-            game.Direction.up,
-            game.Direction.down,
-            game.Direction.left,
-            game.Direction.right,
-        };
-
-        for (dirs_to_check) |dir| {
-            const dx = dxFor(dir);
-            const dy = dyFor(dir);
-            const nx = gx + dx;
-            const ny = gy + dy;
-            const ix: usize = @as(usize, @intFromFloat(nx));
-            const iy: usize = @as(usize, @intFromFloat(ny));
-
-            if (iy > 0 and iy < state.tiles.len and ix > 0 and ix < state.tiles[0].len) {
-                if (state.tiles[iy][ix].entity != .wall) {
-                    dirs.append(allocator, dir) catch {};
-                }
-            }
-        }
-
-        return dirs.toOwnedSlice(allocator) catch &[0]game.Direction{};
     }
 };
 
