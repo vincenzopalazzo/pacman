@@ -1,33 +1,31 @@
 const std = @import("std");
 const pacman = @import("pacman");
+const vaxis = @import("vaxis");
 
-const ECHO: std.c.tc_lflag_t = @bitCast(@as(u64, 0x8));
-const ICANON: std.c.tc_lflag_t = @bitCast(@as(u64, 0x100));
-const VMIN = 16;
-const VTIME = 17;
+const Event = union(enum) {
+    key_press: vaxis.Key,
+    winsize: vaxis.Winsize,
+};
 
 pub fn main() !void {
     const io = std.Io.Threaded.global_single_threaded.io();
     const gpa = std.heap.page_allocator;
-    var stdout_buf: [1024]u8 = undefined;
-    var stdout = std.Io.File.stdout().writer(io, &stdout_buf);
-    const stdout_writer = &stdout.interface;
 
-    const stdin_fd = 0;
-    var original_termios: std.c.termios = undefined;
-    _ = std.c.tcgetattr(stdin_fd, &original_termios);
-    var raw = original_termios;
-    var lflag: u64 = @bitCast(raw.lflag);
-    lflag &=  ~(@as(u64, 0x8) | @as(u64, 0x100));
-    const tc_lflag_type = std.c.tc_lflag_t;
-    raw.lflag = lflag: {
-        const result: tc_lflag_type = @bitCast(lflag);
-        break :lflag result;
-    };
-    raw.cc[VMIN] = 1;
-    raw.cc[VTIME] = 0;
-    _ = std.c.tcsetattr(stdin_fd, std.c.TCSA.NOW, &raw);
-    errdefer _ = std.c.tcsetattr(stdin_fd, std.c.TCSA.NOW, &original_termios);
+    var buffer: [1024]u8 = undefined;
+    var tty = try vaxis.Tty.init(io, &buffer);
+    defer tty.deinit();
+
+    const env = std.process.Environ{ .block = .{ .slice = std.mem.span(std.c.environ) } };
+    var map: std.process.Environ.Map = std.process.Environ.createMap(env, gpa) catch undefined;
+    var vx = try vaxis.init(io, gpa, &map, .{});
+    defer vx.deinit(gpa, tty.writer());
+
+    var loop: vaxis.Loop(Event) = .init(io, &tty, &vx);
+    try loop.start();
+    defer loop.stop();
+
+    try vx.enterAltScreen(tty.writer());
+    try vx.queryTerminal(tty.writer(), .fromSeconds(1));
 
     var state = try pacman.game.loadClassicMaze(gpa, 28, 31);
     defer {
@@ -58,20 +56,41 @@ pub fn main() !void {
     var tick: u32 = 0;
     var anim = pacman.tui.AnimationState.init();
 
-    while (running) : (tick += 1) {
-        if (paused) {
-            try pacman.tui.renderFrame(stdout_writer, &state, &anim, pacman.tui.default_palette);
-            var buf: [8]u8 = undefined;
-            const bytes_read = try std.posix.read(stdin_fd, &buf);
-            if (bytes_read > 0) {
-                if (buf[0] == 'q' or buf[0] == 'Q') {
+    while (running) {
+        const event = try loop.nextEvent();
+        switch (event) {
+            .key_press => |key| {
+                if (key.matches('q', .{ .ctrl = true })) {
                     running = false;
-                } else if (buf[0] == 'p' or buf[0] == 'P') {
-                    paused = false;
+                    continue;
                 }
-            }
+                if (paused) {
+                    if (key.matches('p', .{})) {
+                        paused = false;
+                    }
+                    continue;
+                }
+                if (key.matches('p', .{})) {
+                    paused = true;
+                    continue;
+                }
+                if (key.matches('c', .{ .ctrl = true })) {
+                    running = false;
+                    continue;
+                }
+                handleKeyPress(key, &state, &score);
+            },
+            .winsize => |ws| {
+                try vx.resize(gpa, tty.writer(), ws);
+            },
+        }
+
+        if (paused) {
+            pacman.tui.renderFrame(&vx, vx.window(), &state, &anim, pacman.tui.default_palette);
+            try vx.render(tty.writer());
             continue;
         }
+
         g = 0;
         while (g < 4) : (g += 1) {
             if (state.frightened_timer > 0) {
@@ -89,13 +108,13 @@ pub fn main() !void {
             const dx = state.ghosts[g].x - state.pacman.x;
             const dy = state.ghosts[g].y - state.pacman.y;
             if (dx * dx + dy * dy < 1.0) {
-                    if (ghosts_ai[g].frightened) {
-                        ghosts_ai[g].direction = pacman.game.Direction.none;
-                        state.ghosts[g].x = ghost_start_x[g];
-                        state.ghosts[g].y = ghost_start_y[g];
-                        score += 200;
-                        state.score = score;
-                    } else {
+                if (ghosts_ai[g].frightened) {
+                    ghosts_ai[g].direction = pacman.game.Direction.none;
+                    state.ghosts[g].x = ghost_start_x[g];
+                    state.ghosts[g].y = ghost_start_y[g];
+                    score += 200;
+                    state.score = score;
+                } else {
                     collided = true;
                 }
             }
@@ -103,9 +122,9 @@ pub fn main() !void {
         if (collided) {
             lives -= 1;
             if (lives == 0) {
-                try pacman.tui.renderGameOver(stdout_writer, score, pacman.tui.default_palette);
-                var buf: [8]u8 = undefined;
-                _ = try std.posix.read(stdin_fd, &buf);
+                pacman.tui.renderGameOver(&vx, score, pacman.tui.default_palette);
+                try vx.render(tty.writer());
+                _ = try loop.nextEvent();
                 running = false;
             } else {
                 state.pacman.x = 14.0;
@@ -123,56 +142,55 @@ pub fn main() !void {
         }
 
         anim.update();
-        try pacman.tui.renderFrame(stdout_writer, &state, &anim, pacman.tui.default_palette);
-
-        var buf: [8]u8 = undefined;
-        const bytes_read = try std.posix.read(stdin_fd, &buf);
-        if (bytes_read > 0) {
-            if (buf[0] == 'q' or buf[0] == 'Q') {
-                running = false;
-            } else if (buf[0] == 'p' or buf[0] == 'P') {
-                paused = true;
-            } else if (buf[0] == '\x1b') {
-                if (bytes_read >= 3 and buf[1] == '[') {
-                    var dx: i32 = 0;
-                    var dy: i32 = 0;
-                    if (buf[2] == 'C') dx = 1;
-                    if (buf[2] == 'D') dx = -1;
-                    if (buf[2] == 'A') dy = -1;
-                    if (buf[2] == 'B') dy = 1;
-                    const new_x = state.pacman.x + @as(f32, @floatFromInt(dx));
-                    const new_y = state.pacman.y + @as(f32, @floatFromInt(dy));
-                    const new_ix: usize = @as(usize, @intFromFloat(new_x));
-                    const new_iy: usize = @as(usize, @intFromFloat(new_y));
-                    if (new_ix >= 0 and new_ix < state.tiles[0].len and
-                        new_iy >= 0 and new_iy < state.tiles.len) {
-                        if (state.tiles[new_iy][new_ix].entity != .wall) {
-                            state.pacman.x = new_x;
-                            state.pacman.y = new_y;
-                            if (state.tiles[new_iy][new_ix].entity == .dot) {
-                                state.tiles[new_iy][new_ix].entity = .empty;
-                                score += 10;
-                                state.score = score;
-                                state.dots_remaining -= 1;
-                            } else if (state.tiles[new_iy][new_ix].entity == .power_pellet) {
-                                state.tiles[new_iy][new_ix].entity = .empty;
-                                score += 50;
-                                state.score = score;
-                                state.frightened_timer = 300;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        pacman.tui.renderFrame(&vx, vx.window(), &state, &anim, pacman.tui.default_palette);
+        try vx.render(tty.writer());
 
         if (state.dots_remaining == 0) {
-            try pacman.tui.renderWin(stdout_writer, score, pacman.tui.default_palette);
-            _ = try std.posix.read(stdin_fd, &buf);
+            pacman.tui.renderWin(&vx, score, pacman.tui.default_palette);
+            try vx.render(tty.writer());
+            _ = try loop.nextEvent();
             running = false;
             continue;
         }
 
-        try std.Io.sleep(io, .{ .nanoseconds = 16_000_000 }, .awake);
+        tick += 1;
+    }
+}
+
+fn handleKeyPress(key: vaxis.Key, state: *pacman.game.GameState, score: *u32) void {
+    if (key.matches('q', .{}) or key.matches('Q', .{})) {
+        std.process.exit(0);
+    }
+
+    var dx: i32 = 0;
+    var dy: i32 = 0;
+    if (key.matches('C', .{ .shift = true }) or key.matches(vaxis.Key.right, .{})) dx = 1;
+    if (key.matches('D', .{ .shift = true }) or key.matches(vaxis.Key.left, .{})) dx = -1;
+    if (key.matches('A', .{ .shift = true }) or key.matches(vaxis.Key.up, .{})) dy = -1;
+    if (key.matches('B', .{ .shift = true }) or key.matches(vaxis.Key.down, .{})) dy = 1;
+
+    if (dx == 0 and dy == 0) return;
+
+    const new_x = state.pacman.x + @as(f32, @floatFromInt(dx));
+    const new_y = state.pacman.y + @as(f32, @floatFromInt(dy));
+    const new_ix: usize = @as(usize, @intFromFloat(new_x));
+    const new_iy: usize = @as(usize, @intFromFloat(new_y));
+    if (new_ix >= 0 and new_ix < state.tiles[0].len and
+        new_iy >= 0 and new_iy < state.tiles.len) {
+        if (state.tiles[new_iy][new_ix].entity != .wall) {
+            state.pacman.x = new_x;
+            state.pacman.y = new_y;
+            if (state.tiles[new_iy][new_ix].entity == .dot) {
+                state.tiles[new_iy][new_ix].entity = .empty;
+                score.* += 10;
+                state.score = score.*;
+                state.dots_remaining -= 1;
+            } else if (state.tiles[new_iy][new_ix].entity == .power_pellet) {
+                state.tiles[new_iy][new_ix].entity = .empty;
+                score.* += 50;
+                state.score = score.*;
+                state.frightened_timer = 300;
+            }
+        }
     }
 }
