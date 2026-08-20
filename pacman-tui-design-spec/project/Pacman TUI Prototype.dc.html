@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Canadian+Aboriginal&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #05050A; }
+  * { box-sizing: border-box; }
+  a { color: #FFFF00; text-decoration: none; border-bottom: 1px solid #4A4A00; }
+  a:hover { color: #FFFFFF; }
+</style>
+</helmet>
+
+<div style="background:#05050A;min-height:100vh;padding:26px 28px 60px;font-family:'IBM Plex Sans',sans-serif;color:#A8AEBF">
+<div style="max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+  <header style="display:flex;justify-content:space-between;align-items:flex-end;gap:28px;flex-wrap:wrap;border-bottom:1px solid #1A1A4D;padding-bottom:16px">
+    <div>
+      <div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.3em;color:#FFB8AE;text-transform:uppercase;margin-bottom:10px">Reference prototype · port me to zig</div>
+      <h1 style="font:700 24px/1 'JetBrains Mono',monospace;color:#FFFF00;margin:0">PAC<span style="color:#3B4CFF">·</span>ZIG <span style="color:#4A5068">responsive TUI</span></h1>
+    </div>
+    <div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#7F86A0;text-align:right">
+      <div>every cell below is one terminal cell</div>
+      <div>resize the terminal to see the layout modes switch</div>
+    </div>
+  </header>
+
+  <!-- CONTROLS -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#0A0A14;border:1px solid #1A1A4D;border-radius:6px;padding:12px 14px">
+    <span style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.18em;color:#6B7288;margin-right:2px">SIZE</span>
+    <sc-for list="{{ presets }}" as="p" hint-placeholder-count="5">
+      <button type="button" onClick="{{ p.onClick }}" style="font:500 11.5px/1 'JetBrains Mono',monospace;letter-spacing:.05em;padding:8px 11px;border-radius:4px;cursor:pointer;border:1px solid {{ p.border }};background:{{ p.bg }};color:{{ p.fg }}" style-hover="border-color:#3B4CFF">{{ p.label }}</button>
+    </sc-for>
+    <span style="width:1px;height:22px;background:#1A1A4D;margin:0 4px"></span>
+    <span style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.18em;color:#6B7288">COLS</span>
+    <button type="button" onClick="{{ colsDown }}" style="font:500 12px/1 'JetBrains Mono',monospace;width:26px;height:26px;border-radius:4px;cursor:pointer;border:1px solid #24245C;background:#101020;color:#E4E7F0">−</button>
+    <button type="button" onClick="{{ colsUp }}" style="font:500 12px/1 'JetBrains Mono',monospace;width:26px;height:26px;border-radius:4px;cursor:pointer;border:1px solid #24245C;background:#101020;color:#E4E7F0">+</button>
+    <span style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.18em;color:#6B7288;margin-left:6px">ROWS</span>
+    <button type="button" onClick="{{ rowsDown }}" style="font:500 12px/1 'JetBrains Mono',monospace;width:26px;height:26px;border-radius:4px;cursor:pointer;border:1px solid #24245C;background:#101020;color:#E4E7F0">−</button>
+    <button type="button" onClick="{{ rowsUp }}" style="font:500 12px/1 'JetBrains Mono',monospace;width:26px;height:26px;border-radius:4px;cursor:pointer;border:1px solid #24245C;background:#101020;color:#E4E7F0">+</button>
+    <span style="width:1px;height:22px;background:#1A1A4D;margin:0 4px"></span>
+    <button type="button" onClick="{{ toggleRun }}" style="font:500 11.5px/1 'JetBrains Mono',monospace;padding:8px 12px;border-radius:4px;cursor:pointer;border:1px solid #3B4CFF;background:#0F1030;color:#E4E7F0">{{ runLabel }}</button>
+    <button type="button" onClick="{{ restart }}" style="font:500 11.5px/1 'JetBrains Mono',monospace;padding:8px 12px;border-radius:4px;cursor:pointer;border:1px solid #24245C;background:#101020;color:#E4E7F0">restart</button>
+    <span style="width:1px;height:22px;background:#1A1A4D;margin:0 4px"></span>
+    <span style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.18em;color:#6B7288">MOVE</span>
+    <button type="button" onClick="{{ goUp }}" style="font:400 13px/1 'JetBrains Mono',monospace;width:28px;height:26px;border-radius:4px;cursor:pointer;border:1px solid #24245C;background:#101020;color:#FFFF00">↑</button>
+    <button type="button" onClick="{{ goLeft }}" style="font:400 13px/1 'JetBrains Mono',monospace;width:28px;height:26px;border-radius:4px;cursor:pointer;border:1px solid #24245C;background:#101020;color:#FFFF00">←</button>
+    <button type="button" onClick="{{ goDown }}" style="font:400 13px/1 'JetBrains Mono',monospace;width:28px;height:26px;border-radius:4px;cursor:pointer;border:1px solid #24245C;background:#101020;color:#FFFF00">↓</button>
+    <button type="button" onClick="{{ goRight }}" style="font:400 13px/1 'JetBrains Mono',monospace;width:28px;height:26px;border-radius:4px;cursor:pointer;border:1px solid #24245C;background:#101020;color:#FFFF00">→</button>
+    <span style="font:400 11px/1.4 'IBM Plex Sans';color:#4A5068;margin-left:4px">arrow keys / WASD also work · p pause · r restart</span>
+  </div>
+
+  <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+
+    <!-- TERMINAL -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px;font:500 11px/1 'JetBrains Mono',monospace;color:#6B7288">
+        <span style="width:9px;height:9px;border-radius:50%;background:#FF5F57"></span>
+        <span style="width:9px;height:9px;border-radius:50%;background:#FFBD2E"></span>
+        <span style="width:9px;height:9px;border-radius:50%;background:#28CA42"></span>
+        <span style="margin-left:6px;color:#9EA4B8">{{ termLabel }}</span>
+        <span style="color:#4A5068">{{ modeLabel }}</span>
+      </div>
+      <div style="background:#000;border:1px solid #1A1A4D;border-radius:6px;padding:14px 16px;font-family:'JetBrains Mono','Noto Sans Canadian Aboriginal',monospace;font-size:13px;letter-spacing:0;color:#3B4CFF;display:flex;flex-direction:column"><sc-for list="{{ screen }}" as="row" hint-placeholder-count="38"><div style="white-space:pre;height:14px;line-height:14px;font-size:13px;font-family:'JetBrains Mono','Noto Sans Canadian Aboriginal',monospace"><sc-for list="{{ row.runs }}" as="run" hint-placeholder-count="6"><span style="color:{{ run.c }}">{{ run.t }}</span></sc-for></div></sc-for></div>
+    </div>
+
+    <!-- READOUT -->
+    <div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:16px">
+
+      <div style="background:#0A0A14;border:1px solid #1A1A4D;border-radius:6px;padding:16px 18px">
+        <div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE;margin-bottom:12px">LIVE LAYOUT SOLVE</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <sc-for list="{{ readout }}" as="r" hint-placeholder-count="10">
+            <div style="display:flex;justify-content:space-between;gap:14px;font:400 12px/1.5 'JetBrains Mono',monospace;border-bottom:1px solid #101033;padding-bottom:4px">
+              <span style="color:#6B7288">{{ r.k }}</span><span style="color:{{ r.c }}">{{ r.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#0A0A14;border:1px solid #1A1A4D;border-radius:6px;padding:16px 18px">
+        <div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE;margin-bottom:12px">WHAT TO PORT, IN ORDER</div>
+        <ol style="margin:0;padding-left:18px;font:400 12.5px/1.75 'IBM Plex Sans';color:#A8AEBF">
+          <li><b style="color:#fff;font-weight:600">MAZE</b> — the 31 × 28 tile map. Characters: <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">#</span> wall, <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">.</span> dot, <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">o</span> pellet, <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">-</span> gate, <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">H</span> house, space = void. Copy it byte-for-byte into a <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">[31][]const u8</span>.</li>
+          <li><b style="color:#fff;font-weight:600">resolveWalls()</b> — open-side → glyph. Run once at level load into <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">[31][28][]const u8</span>. Out-of-bounds counts as OPEN, which is what gives the outer border its corners.</li>
+          <li><b style="color:#fff;font-weight:600">layout(cols, rows)</b> — returns mode, cells-per-tile, rail width, x/y offsets. Pure function, no state, called on winsize only.</li>
+          <li><b style="color:#fff;font-weight:600">draw*()</b> — HUD, maze, entities, rail, overlay. Each takes (state, window) and writes cells. No allocation.</li>
+          <li><b style="color:#fff;font-weight:600">step(dt)</b> — fixed 120 Hz: input buffer → pac → ghosts → collisions → phase machine.</li>
+        </ol>
+      </div>
+
+      <div style="background:#0A0A14;border:1px solid #1A1A4D;border-radius:6px;padding:16px 18px">
+        <div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE;margin-bottom:12px">RESPONSIVE CONTRACT</div>
+        <table style="border-collapse:collapse;width:100%">
+          <tbody>
+            <sc-for list="{{ modes }}" as="m" hint-placeholder-count="4">
+              <tr>
+                <td style="font:400 11.5px/1.4 'JetBrains Mono';color:#E4E7F0;padding:7px 10px 7px 0;border-bottom:1px solid #101033;white-space:nowrap;vertical-align:top">{{ m.range }}</td>
+                <td style="font:400 11.5px/1.4 'JetBrains Mono';padding:7px 10px 7px 0;border-bottom:1px solid #101033;white-space:nowrap;vertical-align:top;color:{{ m.color }}">{{ m.name }}</td>
+                <td style="font:400 12px/1.5 'IBM Plex Sans';color:#A8AEBF;padding:7px 0;border-bottom:1px solid #101033">{{ m.note }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <p style="font:400 12px/1.65 'IBM Plex Sans';color:#7F86A0;margin:12px 0 0">The maze never scales or stretches. Only three things change with size: cells-per-tile, whether the rail exists, and the centering offsets. Anything smaller than the minimum shows a live notice instead of a clipped board.</p>
+      </div>
+
+      <div style="background:#0A0A14;border:1px solid #1A1A4D;border-radius:6px;padding:16px 18px">
+        <div style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE;margin-bottom:10px">GLYPH RESOLUTION TABLE</div>
+        <div style="white-space:pre;font:400 12.5px/1.7 'JetBrains Mono',monospace;color:#7F86A0">
+<div><span style="color:#6B7288">open sides (facing non-wall) → glyph</span></div>
+<div>N + W  <span style="color:#3B4CFF">╭</span>     N only / N+S  <span style="color:#3B4CFF">─</span></div>
+<div>N + E  <span style="color:#3B4CFF">╮</span>     S only        <span style="color:#3B4CFF">─</span></div>
+<div>S + W  <span style="color:#3B4CFF">╰</span>     E / W / E+W   <span style="color:#3B4CFF">│</span></div>
+<div>S + E  <span style="color:#3B4CFF">╯</span>     none          <span style="color:#4A5068">space</span></div>
+<div><span style="color:#6B7288">checked in exactly this order</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font:400 11.5px/1.7 'IBM Plex Sans';color:#4A5068;border-top:1px solid #1A1A4D;padding-top:14px">
+    Reference implementation only — the JavaScript in this file exists to be read and ported, not shipped. Timings, palette, glyphs and layout rules match <a href="Pacman TUI Spec.dc.html">Pacman TUI Spec</a>.
+  </div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:980}}">
+const MAZE = [
+  "############################",
+  "#o........................o#",
+  "#.#####.####.##.####.#####.#",
+  "#.#   #.#  #.##.#  #.#   #.#",
+  "#.#####.####.##.####.#####.#",
+  "#..........................#",
+  "#.####.##.########.##.####.#",
+  "#.####.##.########.##.####.#",
+  "#......##..........##......#",
+  "#.####.##.########.##.####.#",
+  "#.#  #....#      #....#  #.#",
+  "#.####....########....####.#",
+  "#..........................#",
+  "#.########.##--##.########.#",
+  "#.########.#HHHH#.########.#",
+  " ..........#HHHH#.......... ",
+  "#.########.#HHHH#.########.#",
+  "#.########.######.########.#",
+  "#..........................#",
+  "#.####....########....####.#",
+  "#.#  #....#      #....#  #.#",
+  "#.####.##.########.##.####.#",
+  "#......##..........##......#",
+  "#.####.##.########.##.####.#",
+  "#.####.##.########.##.####.#",
+  "#..........................#",
+  "#.#####.####.##.####.#####.#",
+  "#.#   #.#  #.##.#  #.#   #.#",
+  "#.#####.####.##.####.#####.#",
+  "#o........................o#",
+  "############################",
+];
+
+const ROWS = 31, COLS = 28;
+const PAL = {
+  bg: "#000000", wall: "#3B4CFF", gate: "#FFB8FF", dot: "#FFB8AE", pac: "#FFFF00",
+  blinky: "#FF0000", pinky: "#FFB8FF", inky: "#00FFFF", clyde: "#FFB852",
+  afraid: "#3B4CFF", flash: "#FFFFFF", hud: "#FFFFFF", dim: "#9EA4B8",
+  alert: "#FF0000", ok: "#4CFF4C", faint: "#4A5068",
+};
+const DIRS = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] };
+const OPP = { up: "down", down: "up", left: "right", right: "left" };
+const PAC_GLYPH = { right: ["ᗧ", "●"], left: ["ᗤ", "●"], up: ["◓", "●"], down: ["◒", "●"] };
+const DEATH = ["ᗧ", "●", "◓", "◒", "○", "○", "◌", "◌", "✳", "·", " "];
+const MODE_PLAN = [[7, "scatter"], [20, "chase"], [7, "scatter"], [20, "chase"], [5, "scatter"], [20, "chase"], [5, "scatter"]];
+// second cell when a tile is drawn 2 cells wide
+const WIDE_PAIR = { "─": "─", "╭": "─", "╰": "─", "╮": " ", "╯": " ", "│": " ", "╌": "╌" };
+
+function isWall(r, c) {
+  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return false; // OOB counts as OPEN
+  return MAZE[r][c] === "#";
+}
+
+function resolveWalls() {
+  const g = [];
+  for (let r = 0; r < ROWS; r++) {
+    const row = [];
+    for (let c = 0; c < COLS; c++) {
+      if (MAZE[r][c] !== "#") { row.push(" "); continue; }
+      const N = !isWall(r - 1, c), S = !isWall(r + 1, c), E = !isWall(r, c + 1), W = !isWall(r, c - 1);
+      row.push(N && W ? "╭" : N && E ? "╮" : S && W ? "╰" : S && E ? "╯" : (N || S) ? "─" : (E || W) ? "│" : " ");
+    }
+    g.push(row);
+  }
+  return g;
+}
+const WALLG = resolveWalls();
+
+function layout(cols, rows) {
+  if (cols < 30 || rows < 36) return { mode: "too_small", cpt: 0, rail: 0, w: 0, h: 0, x: 0, y: 0 };
+  const wide = cols >= 60 && rows >= 38;
+  const cpt = wide ? 2 : 1;
+  const mazeW = COLS * cpt;
+  const rail = (cols >= mazeW + 24 && rows >= 40) ? 20 : 0;
+  const w = mazeW + (rail ? rail + 2 : 0);
+  return {
+    mode: rail ? "wide + rail" : wide ? "wide" : "standard",
+    cpt, rail, w, h: 36,
+    x: Math.floor((cols - w) / 2), y: Math.floor((rows - 36) / 2),
+  };
+}
+
+function pad(n, w) { return String(n).padStart(w, "0"); }
+
+class Component extends DCLogic {
+  state = { cols: 60, rows: 38, frame: 0, running: true };
+
+  componentDidMount() {
+    this.reset();
+    this.last = performance.now();
+    this.timer = setInterval(() => this.loop(), 33);
+    this.onKey = (e) => {
+      const k = e.key.toLowerCase();
+      const map = { arrowup: "up", w: "up", arrowdown: "down", s: "down", arrowleft: "left", a: "left", arrowright: "right", d: "right" };
+      if (map[k]) { this.g.want = map[k]; this.g.wantAt = this.g.t; e.preventDefault(); }
+      else if (k === "p") this.setState((s) => ({ running: !s.running }));
+      else if (k === "r") this.reset();
+    };
+    window.addEventListener("keydown", this.onKey);
+  }
+  componentWillUnmount() { clearInterval(this.timer); window.removeEventListener("keydown", this.onKey); }
+
+  reset() {
+    const food = MAZE.map((r) => r.split(""));
+    let dots = 0;
+    for (const row of food) for (const ch of row) if (ch === "." || ch === "o") dots++;
+    this.g = {
+      t: 0, food, dots, total: dots, score: 0, high: 42995, lives: 2, level: 1,
+      pac: { r: 22, c: 14, dir: "left", prog: 0 },
+      ghosts: [
+        { n: "BLINKY", col: PAL.blinky, r: 12, c: 13, dir: "left", prog: 0, state: "out", home: [1, 26] },
+        { n: "PINKY", col: PAL.pinky, r: 15, c: 12, dir: "up", prog: 0, state: "house", home: [1, 1] },
+        { n: "INKY", col: PAL.inky, r: 15, c: 14, dir: "up", prog: 0, state: "house", home: [29, 26] },
+        { n: "CLYDE", col: PAL.clyde, r: 15, c: 15, dir: "up", prog: 0, state: "house", home: [29, 1] },
+      ],
+      mode: "scatter", modeIdx: 0, modeT: 0, fright: 0, chain: 0,
+      phase: "ready", phaseT: 4.5, want: null, wantAt: 0, deathT: 0, flashT: 0,
+    };
+  }
+
+  loop() {
+    const now = performance.now();
+    let dt = Math.min((now - this.last) / 1000, 0.1);
+    this.last = now;
+    if (this.state.running) { const s = 1 / 120; for (let acc = dt; acc > 0; acc -= s) this.step(Math.min(s, acc)); }
+    this.setState((st) => ({ frame: st.frame + 1 }));
+  }
+
+  step(dt) {
+    const g = this.g;
+    g.t += dt;
+    if (g.phase !== "play") {
+      g.phaseT -= dt;
+      if (g.phase === "death") g.deathT += dt;
+      if (g.phase === "cleared") g.flashT += dt;
+      if (g.phaseT <= 0) {
+        if (g.phase === "ready") g.phase = "play";
+        else if (g.phase === "death") { g.lives -= 1; if (g.lives < 0) { g.phase = "over"; g.phaseT = 1e9; } else this.respawn(); }
+        else if (g.phase === "cleared") { g.level += 1; this.nextLevel(); }
+      }
+      return;
+    }
+    if (g.fright > 0) { g.fright -= dt; if (g.fright <= 0) g.chain = 0; }
+    else { g.modeT += dt; const plan = MODE_PLAN[Math.min(g.modeIdx, MODE_PLAN.length - 1)]; if (g.modeT >= plan[0]) { g.modeT = 0; g.modeIdx++; g.mode = MODE_PLAN[Math.min(g.modeIdx, MODE_PLAN.length - 1)][1]; for (const gh of g.ghosts) if (gh.state === "out") gh.dir = OPP[gh.dir]; } }
+
+    this.movePac(dt);
+    for (const gh of g.ghosts) this.moveGhost(gh, dt);
+    this.collide();
+    if (g.dots === 0) { g.phase = "cleared"; g.phaseT = 2.4; g.flashT = 0; }
+  }
+
+  passable(r, c, ghost) {
+    if (r < 0 || r >= ROWS) return false;
+    const ch = MAZE[r][(c + COLS) % COLS];
+    if (ch === "#") return false;
+    if (!ghost && (ch === "-" || ch === "H")) return false;
+    return true;
+  }
+  ahead(r, c, dir) { const d = DIRS[dir]; return [r + d[0], (c + d[1] + COLS) % COLS]; }
+
+  movePac(dt) {
+    const g = this.g, p = g.pac;
+    p.prog += dt * 8; // 8 tiles/s
+    if (p.prog < 1) return;
+    p.prog -= 1;
+    if (g.want && g.t - g.wantAt < 0.25) { const [r, c] = this.ahead(p.r, p.c, g.want); if (this.passable(r, c, false)) { p.dir = g.want; g.want = null; } }
+    const [nr, nc] = this.ahead(p.r, p.c, p.dir);
+    if (!this.passable(nr, nc, false)) { p.prog = 0; return; }
+    p.r = nr; p.c = nc;
+    const ch = g.food[p.r][p.c];
+    if (ch === "." ) { g.food[p.r][p.c] = " "; g.dots--; g.score += 10; }
+    else if (ch === "o") { g.food[p.r][p.c] = " "; g.dots--; g.score += 50; g.fright = Math.max(1, 7 - g.level); g.chain = 0; for (const gh of g.ghosts) if (gh.state === "out") gh.dir = OPP[gh.dir]; }
+  }
+
+  target(gh) {
+    const g = this.g, p = g.pac;
+    if (gh.state === "eyes") return [14, 13];
+    if (gh.state === "house") return [12, 13];
+    if (g.fright > 0) return [Math.floor(Math.random() * ROWS), Math.floor(Math.random() * COLS)];
+    if (g.mode === "scatter") return gh.home;
+    if (gh.n === "BLINKY") return [p.r, p.c];
+    if (gh.n === "PINKY") { const d = DIRS[p.dir]; return [p.r + d[0] * 4, p.c + d[1] * 4]; }
+    if (gh.n === "INKY") { const b = g.ghosts[0]; const d = DIRS[p.dir]; return [2 * (p.r + d[0] * 2) - b.r, 2 * (p.c + d[1] * 2) - b.c]; }
+    const dist = Math.hypot(p.r - gh.r, p.c - gh.c);
+    return dist > 8 ? [p.r, p.c] : gh.home;
+  }
+
+  moveGhost(gh, dt) {
+    const g = this.g;
+    const speed = gh.state === "eyes" ? 14 : g.fright > 0 ? 5 : 7.5;
+    gh.prog += dt * speed;
+    if (gh.prog < 1) return;
+    gh.prog -= 1;
+    if (gh.state === "house" && g.t > 2 + g.ghosts.indexOf(gh) * 2.5) gh.state = "leaving";
+    if (gh.state === "leaving") { if (gh.r > 12) { gh.r -= gh.c === 13 ? 1 : 0; gh.c += gh.c < 13 ? 1 : gh.c > 13 ? -1 : 0; } else gh.state = "out"; return; }
+    if (gh.state === "eyes" && gh.r === 14 && gh.c === 13) { gh.state = "out"; return; }
+    const [tr, tc] = this.target(gh);
+    let best = null, bestD = Infinity;
+    for (const d of ["up", "left", "down", "right"]) {
+      if (d === OPP[gh.dir] && gh.state !== "eyes") continue;
+      const [nr, nc] = this.ahead(gh.r, gh.c, d);
+      if (!this.passable(nr, nc, true)) continue;
+      const dd = (nr - tr) ** 2 + (nc - tc) ** 2;
+      if (dd < bestD) { bestD = dd; best = [d, nr, nc]; }
+    }
+    if (!best) { gh.dir = OPP[gh.dir]; return; }
+    gh.dir = best[0]; gh.r = best[1]; gh.c = best[2];
+  }
+
+  collide() {
+    const g = this.g, p = g.pac;
+    for (const gh of g.ghosts) {
+      if (gh.state === "eyes" || gh.r !== p.r || gh.c !== p.c) continue;
+      if (g.fright > 0) { g.chain++; g.score += 200 * 2 ** (g.chain - 1); gh.state = "eyes"; }
+      else { g.phase = "death"; g.phaseT = 2.4; g.deathT = 0; return; }
+    }
+  }
+
+  respawn() {
+    const g = this.g;
+    g.pac = { r: 22, c: 14, dir: "left", prog: 0 };
+    g.ghosts.forEach((gh, i) => { gh.r = i === 0 ? 12 : 15; gh.c = [13, 12, 14, 15][i]; gh.dir = i === 0 ? "left" : "up"; gh.state = i === 0 ? "out" : "house"; gh.prog = 0; });
+    g.fright = 0; g.mode = "scatter"; g.modeIdx = 0; g.modeT = 0; g.t = 0;
+    g.phase = "ready"; g.phaseT = 2;
+  }
+  nextLevel() { const keep = { score: this.g.score, lives: this.g.lives, level: this.g.level, high: this.g.high }; this.reset(); Object.assign(this.g, keep); this.g.phaseT = 2; }
+
+  // ---------- drawing ----------
+  buildScreen() {
+    const { cols, rows } = this.state, g = this.g, L = layout(cols, rows);
+    const buf = [];
+    for (let r = 0; r < rows; r++) buf.push(new Array(cols).fill(null));
+    const put = (r, c, ch, col) => { if (r >= 0 && r < rows && c >= 0 && c < cols) buf[r][c] = [ch, col]; };
+    const text = (r, c, s, col) => { for (let i = 0; i < s.length; i++) put(r, c + i, s[i], col); };
+
+    if (L.mode === "too_small") {
+      const msg = ["TERMINAL TOO SMALL", "NEED 30 × 36", "GOT  " + cols + " × " + rows];
+      msg.forEach((m, i) => text(Math.max(0, Math.floor(rows / 2) - 1 + i), Math.max(0, Math.floor((cols - m.length) / 2)), m, i === 0 ? PAL.alert : PAL.dim));
+      return { rows: this.compress(buf), L };
+    }
+
+    const X = L.x, Y = L.y, cpt = L.cpt, tick = g.t;
+    // HUD top
+    text(Y, X, "1UP", PAL.dim);
+    text(Y, X + 6, "HIGH SCORE", PAL.dim);
+    text(Y + 1, X, pad(g.score, 6), PAL.hud);
+    text(Y + 1, X + 7, pad(g.high, 6), PAL.hud);
+    const lvl = "LVL " + pad(g.level, 2);
+    text(Y, X + COLS * cpt - lvl.length, "LVL", PAL.dim);
+    text(Y + 1, X + COLS * cpt - 2, pad(g.level, 2), PAL.hud);
+
+    // maze
+    const mazeFlash = g.phase === "cleared" && Math.floor(g.flashT * 6) % 2 === 1;
+    const wallCol = mazeFlash ? PAL.flash : PAL.wall;
+    const pelletOn = Math.floor(tick * 5) % 2 === 0;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const sc = X + c * cpt, sr = Y + 3 + r, t = MAZE[r][c], f = g.food[r][c];
+        if (t === "#") { const gl = WALLG[r][c]; put(sr, sc, gl, wallCol); if (cpt === 2) put(sr, sc + 1, WIDE_PAIR[gl] || " ", wallCol); }
+        else if (t === "-") { put(sr, sc, "╌", PAL.gate); if (cpt === 2) put(sr, sc + 1, "╌", PAL.gate); }
+        else if (f === ".") put(sr, sc, "·", PAL.dot);
+        else if (f === "o" && pelletOn) put(sr, sc, "●", PAL.dot);
+      }
+    }
+
+    // entities
+    if (g.phase !== "death") {
+      for (const gh of g.ghosts) {
+        const sr = Y + 3 + gh.r, sc = X + gh.c * cpt;
+        if (gh.state === "eyes") put(sr, sc, "\"", PAL.flash);
+        else {
+          let col = gh.col;
+          if (g.fright > 0) col = (g.fright < 2 && Math.floor(tick * 8) % 2 === 0) ? PAL.flash : PAL.afraid;
+          put(sr, sc, "ᗣ", col);
+        }
+      }
+    }
+    const psr = Y + 3 + g.pac.r, psc = X + g.pac.c * cpt;
+    if (g.phase === "death") put(psr, psc, DEATH[Math.min(DEATH.length - 1, Math.floor(g.deathT / 0.13))], g.deathT > 1.2 ? PAL.alert : PAL.pac);
+    else put(psr, psc, PAC_GLYPH[g.pac.dir][Math.floor(tick * 15) % 2], PAL.pac);
+
+    // HUD bottom
+    text(Y + 35, X, "ᗧ".repeat(Math.max(0, g.lives)), PAL.pac);
+    const fruit = "◆ ◆ ◆";
+    text(Y + 35, X + COLS * cpt - fruit.length, fruit, PAL.blinky);
+
+    // rail
+    if (L.rail) {
+      const rx = X + COLS * cpt + 2;
+      text(Y, rx, "GHOSTS", PAL.dim);
+      g.ghosts.forEach((gh, i) => {
+        put(Y + 1 + i, rx, "ᗣ", g.fright > 0 && gh.state !== "eyes" ? PAL.afraid : gh.col);
+        text(Y + 1 + i, rx + 2, gh.n, PAL.hud);
+        text(Y + 1 + i, rx + 10, gh.state === "eyes" ? "EYES" : g.fright > 0 ? "FRIGHT" : g.mode.toUpperCase(), PAL.dim);
+      });
+      text(Y + 7, rx, "DOTS", PAL.dim);
+      const total = g.total, left = g.dots, filled = Math.round((1 - left / total) * 14);
+      text(Y + 8, rx, "█".repeat(Math.max(0, filled)), PAL.ok);
+      text(Y + 8, rx + Math.max(0, filled), "░".repeat(Math.max(0, 14 - filled)), PAL.faint);
+      text(Y + 9, rx, left + " LEFT", PAL.hud);
+      text(Y + 11, rx, "MODE", PAL.dim);
+      text(Y + 12, rx, g.fright > 0 ? "FRIGHTENED " + g.fright.toFixed(1) + "s" : g.mode.toUpperCase(), PAL.hud);
+      text(Y + 14, rx, "KEYS", PAL.dim);
+      ["↑↓←→ move", "p     pause", "r     restart", "q     quit"].forEach((s, i) => text(Y + 15 + i, rx, s, PAL.faint));
+    }
+
+    // overlays
+    const card = (title, tcol, lines, w) => {
+      const h = lines.length + 4, cx = X + Math.floor((COLS * cpt - w) / 2), cy = Y + 3 + Math.floor((ROWS - h) / 2);
+      for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) put(cy + r, cx + c, " ", PAL.bg);
+      text(cy, cx, "╔" + "═".repeat(w - 2) + "╗", tcol);
+      text(cy + h - 1, cx, "╚" + "═".repeat(w - 2) + "╝", tcol);
+      for (let r = 1; r < h - 1; r++) { put(cy + r, cx, "║", tcol); put(cy + r, cx + w - 1, "║", tcol); }
+      text(cy + 1, cx + Math.floor((w - title.length) / 2), title, tcol);
+      lines.forEach((l, i) => text(cy + 3 + i - 1 + 1, cx + Math.floor((w - l[0].length) / 2), l[0], l[1]));
+    };
+    if (g.phase === "ready") text(Y + 3 + 20, X + 11 * cpt, "READY!", PAL.pac);
+    if (g.phase === "over") card("GAME OVER", PAL.alert, [["SCORE " + pad(g.score, 6), PAL.hud], ["r retry   ⎋ menu", PAL.faint]], 22);
+    if (g.phase === "cleared") card("LEVEL " + pad(g.level, 2) + " CLEAR", PAL.ok, [["+" + g.score, PAL.hud], ["next level…", PAL.faint]], 22);
+    if (!this.state.running) card("PAUSED", PAL.dim, [["p resume  r restart", PAL.faint]], 24);
+
+    return { rows: this.compress(buf), L };
+  }
+
+  compress(buf) {
+    return buf.map((row) => {
+      const runs = [];
+      let last = null;
+      let end = row.length; while (end > 0 && row[end - 1] === null) end--;
+      for (let c = 0; c < end; c++) {
+        const cell = row[c] || [" ", PAL.bg];
+        if (last && last.c === cell[1]) last.t += cell[0];
+        else { last = { t: cell[0], c: cell[1] }; runs.push(last); }
+      }
+      if (runs.length === 0) runs.push({ t: " ", c: PAL.bg });
+      return { runs };
+    });
+  }
+
+  size(w, h) { this.setState({ cols: w, rows: h }); }
+
+  renderVals() {
+    if (!this.g) this.reset();
+    const { cols, rows } = this.state;
+    const built = this.buildScreen(), L = built.L, g = this.g;
+    const presetDefs = [[30, 36, "30×36"], [60, 38, "60×38"], [80, 40, "80×40"], [100, 42, "100×42"], [24, 20, "24×20"]];
+    return {
+      screen: built.rows,
+      termLabel: cols + " × " + rows + " cells",
+      modeLabel: "· " + L.mode,
+      runLabel: this.state.running ? "pause" : "play",
+      presets: presetDefs.map(([w, h, label]) => {
+        const on = cols === w && rows === h;
+        return { label, onClick: () => this.size(w, h), bg: on ? "#1A1A4D" : "#101020", fg: on ? "#FFFFFF" : "#9EA4B8", border: on ? "#3B4CFF" : "#24245C" };
+      }),
+      colsUp: () => this.setState((s) => ({ cols: Math.min(140, s.cols + 2) })),
+      colsDown: () => this.setState((s) => ({ cols: Math.max(16, s.cols - 2) })),
+      rowsUp: () => this.setState((s) => ({ rows: Math.min(60, s.rows + 1) })),
+      rowsDown: () => this.setState((s) => ({ rows: Math.max(12, s.rows - 1) })),
+      toggleRun: () => this.setState((s) => ({ running: !s.running })),
+      restart: () => { this.reset(); this.setState({ running: true }); },
+      goUp: () => { this.g.want = "up"; this.g.wantAt = this.g.t; },
+      goDown: () => { this.g.want = "down"; this.g.wantAt = this.g.t; },
+      goLeft: () => { this.g.want = "left"; this.g.wantAt = this.g.t; },
+      goRight: () => { this.g.want = "right"; this.g.wantAt = this.g.t; },
+      readout: [
+        { k: "terminal", v: cols + " × " + rows, c: "#E4E7F0" },
+        { k: "mode", v: L.mode, c: L.mode === "too_small" ? PAL.alert : PAL.ok },
+        { k: "cells per tile", v: String(L.cpt), c: "#E4E7F0" },
+        { k: "canvas", v: L.w + " × " + L.h, c: "#E4E7F0" },
+        { k: "offset x, y", v: L.x + ", " + L.y, c: "#E4E7F0" },
+        { k: "rail width", v: L.rail ? String(L.rail) : "hidden", c: L.rail ? "#E4E7F0" : PAL.faint },
+        { k: "phase", v: g.phase, c: PAL.pac },
+        { k: "ghost mode", v: g.fright > 0 ? "frightened " + g.fright.toFixed(1) + "s" : g.mode, c: g.fright > 0 ? PAL.afraid : "#E4E7F0" },
+        { k: "dots left", v: String(g.dots), c: "#E4E7F0" },
+        { k: "score / lives", v: g.score + " / " + Math.max(0, g.lives), c: "#E4E7F0" },
+      ],
+      modes: [
+        { range: "< 30 × 36", name: "too_small", color: PAL.alert, note: "Live notice with required vs actual size. Never a clipped maze." },
+        { range: "30 × 36", name: "standard", color: PAL.ok, note: "1 cell per tile. Maze reads tall; HUD keeps the same rows." },
+        { range: "60 × 38", name: "wide", color: PAL.ok, note: "2 cells per tile — near-arcade proportions. Preferred default." },
+        { range: "80 × 40", name: "wide + rail", color: PAL.wall, note: "Adds a 20-col rail: ghost roster, dots meter, mode, keys." },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

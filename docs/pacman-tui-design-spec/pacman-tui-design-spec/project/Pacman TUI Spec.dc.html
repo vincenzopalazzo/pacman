@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #000; }
+  * { box-sizing: border-box; }
+  em { font-style: normal; }
+  a { color: #FFFF00; text-decoration: none; border-bottom: 1px solid #4A4A00; }
+  a:hover { color: #FFFFFF; border-bottom-color: #FFFF00; }
+</style>
+</helmet>
+
+<div style="background:#000;min-height:100vh;padding:60px 40px 140px;font-family:'IBM Plex Sans',sans-serif;color:#A8AEBF">
+<div style="max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:92px">
+
+  <header style="display:flex;justify-content:space-between;align-items:flex-end;gap:40px;flex-wrap:wrap;border-bottom:1px solid #1A1A4D;padding-bottom:22px">
+    <div>
+      <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.3em;color:#FFB8AE;text-transform:uppercase;margin-bottom:16px">Terminal UI design specification</div>
+      <h1 style="font:700 40px/1 'JetBrains Mono',monospace;letter-spacing:-0.02em;color:#FFFF00;margin:0">PAC<span style="color:#3B4CFF">·</span>ZIG</h1>
+      <p style="font:400 15px/1.5 'IBM Plex Sans';color:#7F86A0;margin:14px 0 0;max-width:46ch">Arcade-faithful maze chase rendered in box-drawing glyphs. Screens, palette, glyph set, motion and component contract.</p>
+    </div>
+    <div style="font:400 12px/1.95 'JetBrains Mono',monospace;color:#7F86A0;text-align:right">
+      <div>zig <span style="color:#E4E7F0">0.16.0</span> · vaxis <span style="color:#E4E7F0">0.6.0</span></div>
+      <div>truecolor primary · 256 fallback</div>
+      <div>canvas <span style="color:#E4E7F0">28 × 34</span> cells · min term <span style="color:#E4E7F0">30 × 36</span></div>
+    </div>
+  </header>
+
+  <!-- 01 SCREENS -->
+  <section style="display:flex;flex-direction:column;gap:34px">
+    <div>
+      <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.3em;color:#FFB8AE;text-transform:uppercase">01 — Screens</div>
+      <h2 style="font:700 26px/1.2 'JetBrains Mono',monospace;color:#FFFFFF;margin:15px 0 0">The TUI, drawn</h2>
+      <p style="font:400 15px/1.6 'IBM Plex Sans';color:#A8AEBF;margin:12px 0 0;max-width:72ch">Cell-exact: one character below is one terminal cell. The maze is <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">28 × 31 tiles</span>, walls one tile thick and drawn as <b style="color:#fff;font-weight:600">line art</b>, not blocks — that is what makes the arcade read at terminal scale. There is no window chrome: the maze's own outer wall is the frame, on pure black.</p>
+    </div>
+
+    <div style="display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start">
+
+      <!-- HERO: GAMEPLAY / READY -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:#000;border:1px solid #1A1A4D;border-radius:6px;padding:24px 28px;white-space:pre;font:400 16px/1.06 'JetBrains Mono',monospace;color:#3B4CFF">
+<div><span style="color:#9EA4B8">1UP</span>   <span style="color:#9EA4B8">HIGH SCORE</span>   <span style="color:#9EA4B8">LVL</span></div>
+<div><span style="color:#FFFFFF"> 02460</span>     <span style="color:#FFFFFF">42995</span>    <span style="color:#FFFFFF">03</span></div>
+<div> </div>
+<div>╭──────────────────────────╮</div>
+<div>│<em style="color:#FFB8AE">●························●</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╭───╮<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>╭╮<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>╭───╮<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>│   │<em style="color:#FFB8AE">·</em>│  │<em style="color:#FFB8AE">·</em>││<em style="color:#FFB8AE">·</em>│  │<em style="color:#FFB8AE">·</em>│   │<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╰───╯<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>╰╯<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>╰───╯<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">··························</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>╭╮<em style="color:#FFB8AE">·</em>╭──────╮<em style="color:#FFB8AE">·</em>╭╮<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>││<em style="color:#FFB8AE">·</em>╰──────╯<em style="color:#FFB8AE">·</em>││<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">······</em>││<em style="color:#FFB8AE">··········</em>││<em style="color:#FFB8AE">······</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>╰╯<em style="color:#FFB8AE">·</em>╭──────╮<em style="color:#FFB8AE">·</em>╰╯<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>│  │<em style="color:#FFB8AE">····</em>│      │<em style="color:#FFB8AE">····</em>│  │<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">····</em>╰──────╯<em style="color:#FFB8AE">····</em>╰──╯<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">············</em><em style="color:#FF0000">ᗣ</em><em style="color:#FFB8AE">·············</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╭──────╮<em style="color:#FFB8AE">·</em>╭─<em style="color:#FFB8FF">╌╌</em>─╮<em style="color:#FFB8AE">·</em>╭──────╮<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╰──────╯<em style="color:#FFB8AE">·</em>│    │<em style="color:#FFB8AE">·</em>╰──────╯<em style="color:#FFB8AE">·</em>│</div>
+<div> <em style="color:#FFB8AE">··········</em>│<em style="color:#00FFFF">ᗣ</em><em style="color:#FFB8FF">ᗣ</em><em style="color:#FFB852">ᗣ</em> │<em style="color:#FFB8AE">··········</em> </div>
+<div>│<em style="color:#FFB8AE">·</em>╭──────╮<em style="color:#FFB8AE">·</em>│    │<em style="color:#FFB8AE">·</em>╭──────╮<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╰──────╯<em style="color:#FFB8AE">·</em>╰────╯<em style="color:#FFB8AE">·</em>╰──────╯<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">··························</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">····</em>╭──────╮<em style="color:#FFB8AE">····</em>╭──╮<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>│  │<em style="color:#FFB8AE">····</em>│<em style="color:#FFFF00">READY!</em>│<em style="color:#FFB8AE">····</em>│  │<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>╭╮<em style="color:#FFB8AE">·</em>╰──────╯<em style="color:#FFB8AE">·</em>╭╮<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">······</em>││<em style="color:#FFB8AE">·····</em><em style="color:#FFFF00">ᗧ</em><em style="color:#FFB8AE">····</em>││<em style="color:#FFB8AE">······</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>││<em style="color:#FFB8AE">·</em>╭──────╮<em style="color:#FFB8AE">·</em>││<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>╰╯<em style="color:#FFB8AE">·</em>╰──────╯<em style="color:#FFB8AE">·</em>╰╯<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">··························</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╭───╮<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>╭╮<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>╭───╮<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>│   │<em style="color:#FFB8AE">·</em>│  │<em style="color:#FFB8AE">·</em>││<em style="color:#FFB8AE">·</em>│  │<em style="color:#FFB8AE">·</em>│   │<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">·</em>╰───╯<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>╰╯<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">·</em>╰───╯<em style="color:#FFB8AE">·</em>│</div>
+<div>│<em style="color:#FFB8AE">●························●</em>│</div>
+<div>╰──────────────────────────╯</div>
+<div> </div>
+<div><em style="color:#FFFF00">ᗧᗧ</em>                <em style="color:#FF0000">◆</em> <em style="color:#FF7AA8">◆</em> <em style="color:#FFB852">◆</em> <em style="color:#4CFF4C">◆</em></div>
+        </div>
+        <div style="font:400 12px/1.6 'JetBrains Mono',monospace;color:#6B7288">GAMEPLAY · READY phase · 28 × 34 cells · reference screen</div>
+      </div>
+
+      <div style="flex:1;min-width:330px;display:flex;flex-direction:column;gap:22px">
+
+        <div style="background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:20px 22px">
+          <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE;margin-bottom:14px">READING THE MAZE</div>
+          <ul style="margin:0;padding-left:18px;font:400 13.5px/1.7 'IBM Plex Sans';color:#A8AEBF">
+            <li>Wall tiles are <b style="color:#fff;font-weight:600">line glyphs resolved from neighbours</b> (11 cases: <span style="font-family:'JetBrains Mono',monospace;color:#3B4CFF">╭ ╮ ╰ ╯ ─ │ ├ ┤ ┬ ┴ ┼</span>), rounded corners only. A wall is never a filled block — filled blocks read as walls-are-rooms and kill the arcade look.</li>
+            <li>Corridor interiors of wall structures stay black. The eye completes the shape.</li>
+            <li>The tunnel row (maze row 15) has no side wall: Pac and ghosts wrap x, ghosts at half speed inside it.</li>
+            <li>Ghost-house door is <span style="font-family:'JetBrains Mono',monospace;color:#FFB8FF">╌╌</span> in pink, non-collidable for ghosts only.</li>
+            <li>HUD is unframed text on rows 0–1 and row 33 — same left margin as the maze wall, never boxed.</li>
+          </ul>
+        </div>
+
+        <div style="background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:20px 22px;display:flex;flex-direction:column;gap:12px">
+          <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#3B4CFF">POWERED UP · frightened ghosts</div>
+          <div style="white-space:pre;font:400 15px/1.08 'JetBrains Mono',monospace;color:#3B4CFF">
+<div>│<em style="color:#FFB8AE">······</em>││<em style="color:#FFB8AE">····</em><em style="color:#3B4CFF">ᗣ</em><em style="color:#FFB8AE">·····</em>││</div>
+<div>│<em style="color:#FFB8AE">·</em>╭──╮<em style="color:#FFB8AE">·</em>││<em style="color:#FFB8AE">·</em>╭──────╮<em style="color:#FFB8AE">·</em>││</div>
+<div>│<em style="color:#FFB8AE">·</em>│  │<em style="color:#FFB8AE">·</em>╰╯<em style="color:#FFFF00">ᗤ</em><em style="color:#FFFFFF">ᗣ</em><em style="color:#FFB8AE">····</em>│<em style="color:#FFFFFF">"</em>││</div>
+<div>│<em style="color:#FFB8AE">·</em>╰──╯<em style="color:#FFB8AE">········</em>╰────╯<em style="color:#FFB8AE">·</em>││</div>
+          </div>
+          <div style="font:400 13px/1.65 'IBM Plex Sans';color:#A8AEBF">All four ghosts drop to <span style="font-family:'JetBrains Mono',monospace;color:#3B4CFF">#3B4CFF</span> and reverse. Last 2 s they alternate with <span style="font-family:'JetBrains Mono',monospace;color:#FFFFFF">#FFFFFF</span> at 4 Hz. An eaten ghost becomes eyes only — <span style="font-family:'JetBrains Mono',monospace;color:#FFFFFF">"</span> — and sprints home. Pac keeps his own colour throughout; never tint the player to signal state.</div>
+        </div>
+
+        <div style="background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:20px 22px;display:flex;flex-direction:column;gap:12px">
+          <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FF0000">DEATH · 11 frames · 1.4 s</div>
+          <div style="white-space:pre;font:400 22px/1.25 'JetBrains Mono',monospace;color:#FFFF00;letter-spacing:.34em">ᗧ ● ◓ ◒ ○ ◌ ✳</div>
+          <div style="white-space:pre;font:400 11px/1.2 'JetBrains Mono',monospace;color:#4A5068;letter-spacing:.34em">0 1 2 3 4 5 6…</div>
+          <div style="font:400 13px/1.65 'IBM Plex Sans';color:#A8AEBF">Ghosts are <b style="color:#fff;font-weight:600">hidden</b> from frame 0 (arcade behaviour), maze holds still, final frame turns <span style="font-family:'JetBrains Mono',monospace;color:#FF0000">#FF0000</span>, then 1 s black before READY.</div>
+        </div>
+
+        <div style="background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:20px 22px;display:flex;flex-direction:column;gap:12px">
+          <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFFF00">MOUTH · 7.5 Hz, 2 frames per axis</div>
+          <div style="white-space:pre;font:400 22px/1.25 'JetBrains Mono',monospace;color:#FFFF00;letter-spacing:.3em">ᗧ● ᗤ● ◓● ◒●</div>
+          <div style="white-space:pre;font:400 11px/1.6 'JetBrains Mono',monospace;color:#4A5068;letter-spacing:.06em">right  left   up    down</div>
+          <div style="font:400 13px/1.65 'IBM Plex Sans';color:#A8AEBF">Direction picks the glyph pair; the cycle only toggles open/closed. Direction changes snap — no interpolation, ever. A blocked Pac freezes on the closed glyph, which is the only motion feedback the grid allows.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERLAYS -->
+    <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+      <sc-if value="{{ showTitleScreen }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:#000;border:1px solid #1A1A4D;border-radius:6px;padding:22px 26px;white-space:pre;font:400 15px/1.1 'JetBrains Mono',monospace;color:#3B4CFF">
+<div>╭──────────────────────────╮</div>
+<div>│<span style="display:inline-block;width:26ch"> </span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#FFFF00">█▀▀▄ ▄▀▀▄ ▄▀▀▀</span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#FFFF00">█▀▀  █▀▀█ █   </span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#C9A800">▀    ▀  ▀ ▀▀▀▀</span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#FFB8AE">· Z I G ·</span>│</div>
+<div>│<span style="display:inline-block;width:26ch"> </span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#FFFFFF"><span style="background:#FFFF00;color:#000"> ᗧ NEW GAME </span></span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#9EA4B8">HIGH SCORES</span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#9EA4B8">OPTIONS</span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#9EA4B8">QUIT</span>│</div>
+<div>│<span style="display:inline-block;width:26ch"> </span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center"><em style="color:#FF0000">ᗣ</em> <em style="color:#9EA4B8">BLINKY  200</em></span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center"><em style="color:#FFB8FF">ᗣ</em> <em style="color:#9EA4B8">PINKY   400</em></span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center"><em style="color:#00FFFF">ᗣ</em> <em style="color:#9EA4B8">INKY    800</em></span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center"><em style="color:#FFB852">ᗣ</em> <em style="color:#9EA4B8">CLYDE  1600</em></span>│</div>
+<div>│<span style="display:inline-block;width:26ch"> </span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#FFFFFF">HIGH SCORE  42995</span>│</div>
+<div>│<span style="display:inline-block;width:26ch"> </span>│</div>
+<div>│<span style="display:inline-block;width:26ch;text-align:center;color:#4A5068">↑↓ move  ⏎ start  q quit</span>│</div>
+<div>│<span style="display:inline-block;width:26ch"> </span>│</div>
+<div>╰──────────────────────────╯</div>
+        </div>
+        <div style="font:400 12px/1.6 'JetBrains Mono',monospace;color:#6B7288">TITLE · 28 cols · selection = inverted yellow</div>
+      </div>
+      </sc-if>
+
+      <div style="display:flex;flex-direction:column;gap:18px;flex:1;min-width:330px">
+        <div style="background:#000;border:1px solid #1A1A4D;border-radius:6px;padding:20px 24px;white-space:pre;font:400 15px/1.1 'JetBrains Mono',monospace;color:#5C1414">
+<div>╔══════════════════════╗</div>
+<div>║<span style="display:inline-block;width:22ch"> </span>║</div>
+<div>║<span style="display:inline-block;width:22ch;text-align:center;color:#FF0000;font-weight:700">GAME OVER</span>║</div>
+<div>║<span style="display:inline-block;width:22ch"> </span>║</div>
+<div>║<span style="display:inline-block;width:22ch;text-align:center;color:#FFFFFF">SCORE 02460</span>║</div>
+<div>║<span style="display:inline-block;width:22ch;text-align:center;color:#9EA4B8">BEST  42995</span>║</div>
+<div>║<span style="display:inline-block;width:22ch"> </span>║</div>
+<div>║<span style="display:inline-block;width:22ch;text-align:center;color:#4A5068">r retry   ⎋ menu</span>║</div>
+<div>╚══════════════════════╝</div>
+        </div>
+        <div style="background:#000;border:1px solid #1A1A4D;border-radius:6px;padding:20px 24px;white-space:pre;font:400 15px/1.1 'JetBrains Mono',monospace;color:#1A3D1A">
+<div>╔══════════════════════╗</div>
+<div>║<span style="display:inline-block;width:22ch;text-align:center;color:#4CFF4C;font-weight:700">LEVEL 03 CLEARED</span>║</div>
+<div>║<span style="display:inline-block;width:22ch;text-align:center;color:#FFFFFF">+2400  <em style="color:#9EA4B8">no deaths</em></span>║</div>
+<div>║<span style="display:inline-block;width:22ch;text-align:center;color:#4A5068">next level in 2</span>║</div>
+<div>╚══════════════════════╝</div>
+        </div>
+        <div style="background:#000;border:1px solid #1A1A4D;border-radius:6px;padding:20px 24px;white-space:pre;font:400 15px/1.1 'JetBrains Mono',monospace;color:#2A2A66">
+<div>╔══════════════════╗</div>
+<div>║<span style="display:inline-block;width:18ch;text-align:center;color:#FFFFFF">PAUSED</span>║</div>
+<div>║<span style="display:inline-block;width:18ch;text-align:center;color:#4A5068">p resume  q quit</span>║</div>
+<div>╚══════════════════╝</div>
+        </div>
+        <div style="font:400 13px/1.65 'IBM Plex Sans';color:#A8AEBF;max-width:56ch">Overlays are the <b style="color:#fff;font-weight:600">only</b> double-line frames in the game — that is how the eye separates chrome from maze. They are centered child windows drawn over the live board, which keeps rendering underneath at <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">dim = true</span> instead of being cleared. Cards paint their own black background so dots don't bleed through.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 LAYOUT -->
+  <section style="display:flex;flex-direction:column;gap:30px">
+    <div>
+      <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.3em;color:#FFB8AE;text-transform:uppercase">02 — Layout &amp; composition</div>
+      <h2 style="font:700 26px/1.2 'JetBrains Mono',monospace;color:#FFFFFF;margin:15px 0 0">Cell math</h2>
+    </div>
+
+    <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+      <div style="background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:22px 26px;white-space:pre;font:400 13px/1.35 'JetBrains Mono',monospace;color:#6B7288">
+<div><span style="color:#4A5068">◀</span> 28 cols <span style="color:#4A5068">▶</span></div>
+<div><span style="color:#9EA4B8">row 0</span>   <span style="color:#E4E7F0">HUD labels</span>      <span style="color:#4A5068">1UP · HIGH SCORE · LVL</span></div>
+<div><span style="color:#9EA4B8">row 1</span>   <span style="color:#E4E7F0">HUD values</span>      <span style="color:#4A5068">6-digit zero-padded</span></div>
+<div><span style="color:#9EA4B8">row 2</span>   <span style="color:#4A5068">spacer (blank)</span></div>
+<div><span style="color:#9EA4B8">row 3</span>   <span style="color:#3B4CFF">╭────── maze top ──────╮</span></div>
+<div><span style="color:#9EA4B8">  ⋮</span>    <span style="color:#3B4CFF">│</span>  <span style="color:#4A5068">31 rows · tiles 0–30</span> <span style="color:#3B4CFF">│</span></div>
+<div><span style="color:#9EA4B8">  ⋮</span>    <span style="color:#3B4CFF">│</span>  <span style="color:#4A5068">tunnel at tile row 15</span><span style="color:#3B4CFF">│</span></div>
+<div><span style="color:#9EA4B8">  ⋮</span>    <span style="color:#3B4CFF">│</span>  <span style="color:#4A5068">house rows 13–17</span>     <span style="color:#3B4CFF">│</span></div>
+<div><span style="color:#9EA4B8">row 33</span>  <span style="color:#3B4CFF">╰──── maze bottom ─────╯</span></div>
+<div><span style="color:#9EA4B8">row 34</span>  <span style="color:#4A5068">spacer (blank)</span></div>
+<div><span style="color:#9EA4B8">row 35</span>  <span style="color:#E4E7F0">lives ᗧᗧ</span>    <span style="color:#E4E7F0">fruit ◆◆◆</span></div>
+<div> </div>
+<div><span style="color:#4A5068">36 rows total · nothing scales · offsets are integers</span></div>
+      </div>
+
+      <div style="flex:1;min-width:340px;display:flex;flex-direction:column;gap:18px">
+        <table style="border-collapse:collapse;width:100%">
+          <thead><tr>
+            <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 12px 10px 0;border-bottom:1px solid #24245C">TERMINAL</th>
+            <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 12px 10px 0;border-bottom:1px solid #24245C">MODE</th>
+            <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 0 10px;border-bottom:1px solid #24245C">TREATMENT</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ sizes }}" as="s" hint-placeholder-count="5">
+              <tr>
+                <td style="font:400 13px/1.4 'JetBrains Mono';color:#E4E7F0;padding:11px 12px 11px 0;border-bottom:1px solid #101033;white-space:nowrap;vertical-align:top">{{ s.size }}</td>
+                <td style="font:400 13px/1.4 'JetBrains Mono';padding:11px 12px 11px 0;border-bottom:1px solid #101033;white-space:nowrap;vertical-align:top;color:{{ s.color }}">{{ s.mode }}</td>
+                <td style="font:400 13px/1.55 'IBM Plex Sans';color:#A8AEBF;padding:11px 0;border-bottom:1px solid #101033">{{ s.note }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <div style="font:400 14px/1.7 'IBM Plex Sans';color:#A8AEBF;max-width:64ch">Center with saturating integer math — <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">(root.width -| 28) / 2</span> — and bias odd remainders left. Recompute only on <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">winsize</span> events. Wide mode doubles every wall glyph horizontally (line glyphs with a horizontal arm pair with <span style="font-family:'JetBrains Mono',monospace;color:#3B4CFF">─</span>, pure verticals pair with a space) so corridors stay connected and tiles read square.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 PALETTE -->
+  <section style="display:flex;flex-direction:column;gap:30px">
+    <div>
+      <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.3em;color:#FFB8AE;text-transform:uppercase">03 — Palette</div>
+      <h2 style="font:700 26px/1.2 'JetBrains Mono',monospace;color:#FFFFFF;margin:15px 0 0">modern_palette</h2>
+      <p style="font:400 15px/1.6 'IBM Plex Sans';color:#A8AEBF;margin:12px 0 0;max-width:72ch">Arcade hues, terminal luminance. Two roles are deliberately brighter than the original — walls and frightened ghosts — because <span style="font-family:'JetBrains Mono',monospace;color:#3B4CFF">#2121DE</span> on black is 2.5:1 and unreadable on a dim laptop panel. Everything is measured against <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">#000000</span>.</p>
+    </div>
+
+    <table style="border-collapse:collapse;width:100%">
+      <thead><tr>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">ROLE</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">SWATCH</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">HEX</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">256</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">CR</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 0 10px;border-bottom:1px solid #24245C">NOTE</th>
+      </tr></thead>
+      <tbody>
+        <sc-for list="{{ palette }}" as="p" hint-placeholder-count="16">
+          <tr>
+            <td style="font:400 13px/1.4 'JetBrains Mono';color:#E4E7F0;padding:9px 14px 9px 0;border-bottom:1px solid #101033;white-space:nowrap">{{ p.role }}</td>
+            <td style="padding:9px 14px 9px 0;border-bottom:1px solid #101033"><span style="display:inline-block;width:42px;height:15px;border-radius:2px;border:1px solid #24245C;background:{{ p.hex }}"></span></td>
+            <td style="font:400 13px/1.4 'JetBrains Mono';color:#E4E7F0;padding:9px 14px 9px 0;border-bottom:1px solid #101033">{{ p.hex }}</td>
+            <td style="font:400 13px/1.4 'JetBrains Mono';color:#7F86A0;padding:9px 14px 9px 0;border-bottom:1px solid #101033">{{ p.idx }}</td>
+            <td style="font:400 13px/1.4 'JetBrains Mono';color:#7F86A0;padding:9px 14px 9px 0;border-bottom:1px solid #101033">{{ p.cr }}</td>
+            <td style="font:400 13px/1.5 'IBM Plex Sans';color:#A8AEBF;padding:9px 0;border-bottom:1px solid #101033">{{ p.note }}</td>
+          </tr>
+        </sc-for>
+      </tbody>
+    </table>
+
+    <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+      <div style="flex:1;min-width:320px;background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:22px 24px">
+        <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE;margin-bottom:14px">CONTRAST &amp; ACCESSIBILITY</div>
+        <ul style="margin:0;padding-left:18px;font:400 14px/1.7 'IBM Plex Sans';color:#A8AEBF">
+          <li>Shipping palette: every foreground ≥ 4.5:1 on black. Blinky (5.3) and walls (4.6) are the floor — never dim them, never draw them on a non-black bg.</li>
+          <li>Offer <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">--theme=arcade</span> for the authentic #2121DE walls, opt-in and documented as low contrast.</li>
+          <li>Nothing is signalled by hue alone: frightened ghosts also flash, eaten ghosts change glyph, Pac's mouth stops when blocked, dots-remaining has a numeric readout in wide mode.</li>
+          <li>Blinky/Clyde is the weak pair under deuteranopia — they never share a row in the HUD roster, and the roster labels them by name.</li>
+          <li>Never set <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">bg</span> on maze cells: inherit the terminal background so transparency and user themes survive. Only HUD inversion and overlay cards paint bg.</li>
+          <li>Dots are peach, not white — white is reserved for ghost eyes, HUD values and the frightened flash, so three separate meanings never collide.</li>
+        </ul>
+      </div>
+      <sc-if value="{{ showZigSnippets }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1;min-width:320px;background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:22px 24px;white-space:pre;overflow-x:auto;font:400 12.5px/1.65 'JetBrains Mono',monospace;color:#A8AEBF">
+<span style="color:#6B7288">// palette.zig</span>
+<span style="color:#FFB8FF">const</span> vaxis = <span style="color:#FFB8FF">@import</span>(<span style="color:#FFB8AE">"vaxis"</span>);
+<span style="color:#FFB8FF">const</span> Color = vaxis.Cell.Color;
+
+<span style="color:#6B7288">// Color = union(enum){ default, index: u8, rgb: [3]u8 }</span>
+<span style="color:#FFB8FF">pub const</span> Role = <span style="color:#FFB8FF">struct</span> { rgb: Color, idx: Color };
+
+<span style="color:#FFB8FF">fn</span> role(hex: <span style="color:#00FFFF">u24</span>, i: <span style="color:#00FFFF">u8</span>) Role {
+    <span style="color:#FFB8FF">return</span> .{ .rgb = Color.rgbFromUint(hex), .idx = .{ .index = i } };
+}
+
+<span style="color:#FFB8FF">pub const</span> modern_palette = <span style="color:#FFB8FF">struct</span> {
+    <span style="color:#FFB8FF">pub const</span> wall     = role(<span style="color:#FFFF00">0x3B4CFF</span>, <span style="color:#FFFF00">63</span>);
+    <span style="color:#FFB8FF">pub const</span> gate     = role(<span style="color:#FFFF00">0xFFB8FF</span>, <span style="color:#FFFF00">219</span>);
+    <span style="color:#FFB8FF">pub const</span> dot      = role(<span style="color:#FFFF00">0xFFB8AE</span>, <span style="color:#FFFF00">224</span>);
+    <span style="color:#FFB8FF">pub const</span> pac      = role(<span style="color:#FFFF00">0xFFFF00</span>, <span style="color:#FFFF00">226</span>);
+    <span style="color:#FFB8FF">pub const</span> blinky   = role(<span style="color:#FFFF00">0xFF0000</span>, <span style="color:#FFFF00">196</span>);
+    <span style="color:#FFB8FF">pub const</span> pinky    = role(<span style="color:#FFFF00">0xFFB8FF</span>, <span style="color:#FFFF00">219</span>);
+    <span style="color:#FFB8FF">pub const</span> inky     = role(<span style="color:#FFFF00">0x00FFFF</span>, <span style="color:#FFFF00">51</span>);
+    <span style="color:#FFB8FF">pub const</span> clyde    = role(<span style="color:#FFFF00">0xFFB852</span>, <span style="color:#FFFF00">215</span>);
+    <span style="color:#FFB8FF">pub const</span> afraid   = role(<span style="color:#FFFF00">0x3B4CFF</span>, <span style="color:#FFFF00">63</span>);
+    <span style="color:#FFB8FF">pub const</span> flash    = role(<span style="color:#FFFF00">0xFFFFFF</span>, <span style="color:#FFFF00">231</span>);
+    <span style="color:#FFB8FF">pub const</span> hud      = role(<span style="color:#FFFF00">0xFFFFFF</span>, <span style="color:#FFFF00">231</span>);
+    <span style="color:#FFB8FF">pub const</span> hud_dim  = role(<span style="color:#FFFF00">0x9EA4B8</span>, <span style="color:#FFFF00">248</span>);
+};
+
+<span style="color:#6B7288">// resolve once, at startup — not per cell</span>
+<span style="color:#FFB8FF">pub fn</span> fg(vx: *<span style="color:#FFB8FF">const</span> vaxis.Vaxis, r: Role) Color {
+    <span style="color:#FFB8FF">return if</span> (vx.caps.rgb) r.rgb <span style="color:#FFB8FF">else</span> r.idx;
+}</div>
+      </sc-if>
+    </div>
+  </section>
+
+  <!-- 04 GLYPHS -->
+  <section style="display:flex;flex-direction:column;gap:30px">
+    <div>
+      <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.3em;color:#FFB8AE;text-transform:uppercase">04 — Typography &amp; glyphs</div>
+      <h2 style="font:700 26px/1.2 'JetBrains Mono',monospace;color:#FFFFFF;margin:15px 0 0">Glyph reference</h2>
+      <p style="font:400 15px/1.6 'IBM Plex Sans';color:#A8AEBF;margin:12px 0 0;max-width:74ch">Every glyph here is width-1 in a modern monospace terminal. <b style="color:#fff;font-weight:600">No emoji.</b> 🟡 is width-2 in most terminals and width-1 in a few — a single mismeasured cell shears the whole maze. Measure with <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">win.gwidth()</span> at startup and fall back to the ASCII column if any glyph reports ≠ 1.</p>
+    </div>
+
+    <table style="border-collapse:collapse;width:100%">
+      <thead><tr>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">ELEMENT</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">GLYPH</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">CODEPOINT</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">ASCII</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 0 10px;border-bottom:1px solid #24245C">USE</th>
+      </tr></thead>
+      <tbody>
+        <sc-for list="{{ glyphs }}" as="g" hint-placeholder-count="14">
+          <tr>
+            <td style="font:400 13px/1.4 'JetBrains Mono';color:#E4E7F0;padding:9px 14px 9px 0;border-bottom:1px solid #101033;white-space:nowrap;vertical-align:top">{{ g.el }}</td>
+            <td style="font:400 19px/1.3 'JetBrains Mono';padding:8px 14px 8px 0;border-bottom:1px solid #101033;white-space:pre;letter-spacing:.14em;vertical-align:top;color:{{ g.color }}">{{ g.glyph }}</td>
+            <td style="font:400 12px/1.5 'JetBrains Mono';color:#7F86A0;padding:9px 14px 9px 0;border-bottom:1px solid #101033;white-space:nowrap;vertical-align:top">{{ g.cp }}</td>
+            <td style="font:400 13px/1.4 'JetBrains Mono';color:#7F86A0;padding:9px 14px 9px 0;border-bottom:1px solid #101033;vertical-align:top">{{ g.ascii }}</td>
+            <td style="font:400 13px/1.5 'IBM Plex Sans';color:#A8AEBF;padding:9px 0;border-bottom:1px solid #101033;vertical-align:top">{{ g.use }}</td>
+          </tr>
+        </sc-for>
+      </tbody>
+    </table>
+
+    <div style="display:flex;gap:26px;flex-wrap:wrap">
+      <div style="flex:1;min-width:320px;background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:22px 24px">
+        <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE;margin-bottom:16px">WALL RESOLUTION — 11 CASES FROM 4 NEIGHBOURS</div>
+        <div style="white-space:pre;font:400 15px/1.5 'JetBrains Mono',monospace;color:#3B4CFF">
+<div>╭─┬─╮   ╭──╮  ╭────╮   <span style="color:#4A5068">N E S W → glyph</span></div>
+<div>├─┼─┤   │  │  │    │   <span style="color:#4A5068">.  E  .  W  ─</span></div>
+<div>╰─┴─╯   ╰──╯  ╰────╯   <span style="color:#4A5068">N  .  S  .  │</span></div>
+<div>                       <span style="color:#4A5068">.  E  S  .  ╭</span></div>
+<div>                       <span style="color:#4A5068">.  .  S  W  ╮</span></div>
+<div>                       <span style="color:#4A5068">N  E  .  .  ╰</span></div>
+<div>                       <span style="color:#4A5068">N  .  .  W  ╯</span></div>
+        </div>
+        <p style="font:400 13px/1.65 'IBM Plex Sans';color:#A8AEBF;margin:16px 0 0">Resolve once when the level loads into a <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">[31][28]u8</span> glyph index table — never per frame. Rounded corners (<span style="font-family:'JetBrains Mono',monospace;color:#3B4CFF">╭╮╰╯</span>) are the arcade tell; square corners look like a form, not a maze. T-junctions and crosses only appear where two wall structures touch, which a good maze layout avoids.</p>
+      </div>
+      <div style="flex:1;min-width:320px;background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:22px 24px">
+        <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE;margin-bottom:16px">TYPE &amp; FRAMES</div>
+        <div style="font:400 13.5px/1.9 'JetBrains Mono',monospace;color:#E4E7F0;display:flex;flex-direction:column;gap:2px">
+          <div><span style="color:#7F86A0;display:inline-block;width:15ch">Maze walls</span>╭ ─ ╮ │ ╰ ╯ ├ ┤ ┬ ┴ ┼</div>
+          <div><span style="color:#7F86A0;display:inline-block;width:15ch">Overlay frame</span>╔ ═ ╗ ║ ╚ ╝ <span style="color:#6B7288">· <span style="color:#E4E7F0">.custom</span> array</span></div>
+          <div><span style="color:#7F86A0;display:inline-block;width:15ch">Ghost door</span>╌ <span style="color:#6B7288">· pink, dim</span></div>
+          <div><span style="color:#7F86A0;display:inline-block;width:15ch">Title letters</span>█ ▀ ▄ <span style="color:#6B7288">· 3-row block type</span></div>
+          <div><span style="color:#7F86A0;display:inline-block;width:15ch">Meters</span>█ ░ <span style="color:#6B7288">· wide-mode rail only</span></div>
+          <div><span style="color:#7F86A0;display:inline-block;width:15ch">Keycaps</span>↑ ↓ ← → ⏎ ⎋ <span style="color:#6B7288">· hint rows</span></div>
+        </div>
+        <p style="font:400 13px/1.65 'IBM Plex Sans';color:#A8AEBF;margin:16px 0 0">All HUD copy is <b style="color:#fff;font-weight:600">uppercase, single-spaced, zero-padded</b> — arcade scoreboards have no lowercase and no thousands separators. Labels in <span style="font-family:'JetBrains Mono',monospace;color:#9EA4B8">#9EA4B8</span>, values in <span style="font-family:'JetBrains Mono',monospace;color:#FFFFFF">#FFFFFF</span>; that two-tone pair is the entire HUD type system.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 ANIMATION -->
+  <section style="display:flex;flex-direction:column;gap:30px">
+    <div>
+      <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.3em;color:#FFB8AE;text-transform:uppercase">05 — Animation &amp; state</div>
+      <h2 style="font:700 26px/1.2 'JetBrains Mono',monospace;color:#FFFFFF;margin:15px 0 0">Cadence</h2>
+      <p style="font:400 15px/1.6 'IBM Plex Sans';color:#A8AEBF;margin:12px 0 0;max-width:74ch">One fixed-step sim clock at <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">120 Hz</span>, render capped at <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">30 fps</span> and only when the frame changed. Movement is tile-quantised, so <b style="color:#fff;font-weight:600">there is no easing anywhere</b> — sub-cell interpolation just aliases into neighbouring cells. Feel comes from timing and from the input buffer, not curves.</p>
+    </div>
+
+    <table style="border-collapse:collapse;width:100%">
+      <thead><tr>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">STATE</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">TIMING</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">GLYPHS</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 0 10px;border-bottom:1px solid #24245C">BEHAVIOUR</th>
+      </tr></thead>
+      <tbody>
+        <sc-for list="{{ motion }}" as="m" hint-placeholder-count="11">
+          <tr>
+            <td style="font:400 13px/1.4 'JetBrains Mono';color:#E4E7F0;padding:9px 14px 9px 0;border-bottom:1px solid #101033;white-space:nowrap;vertical-align:top">{{ m.state }}</td>
+            <td style="font:400 13px/1.4 'JetBrains Mono';color:#FFB8AE;padding:9px 14px 9px 0;border-bottom:1px solid #101033;white-space:nowrap;vertical-align:top">{{ m.timing }}</td>
+            <td style="font:400 17px/1.25 'JetBrains Mono';padding:8px 14px 8px 0;border-bottom:1px solid #101033;white-space:pre;letter-spacing:.16em;vertical-align:top;color:{{ m.color }}">{{ m.glyphs }}</td>
+            <td style="font:400 13px/1.5 'IBM Plex Sans';color:#A8AEBF;padding:9px 0;border-bottom:1px solid #101033;vertical-align:top">{{ m.note }}</td>
+          </tr>
+        </sc-for>
+      </tbody>
+    </table>
+
+    <div style="display:flex;gap:26px;flex-wrap:wrap">
+      <div style="flex:1;min-width:330px;background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:22px 24px;display:flex;flex-direction:column;gap:16px">
+        <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE">GHOST MODE TIMELINE <span style="color:#6B7288">· level 1 · seconds</span></div>
+        <div style="white-space:pre;overflow-x:auto;font:400 13px/1.6 'JetBrains Mono',monospace;color:#7F86A0">
+<div><span style="color:#6B7288">0      7             27     34           54</span></div>
+<div><span style="color:#00FFFF">███████</span><span style="color:#FF0000">█████████████████</span><span style="color:#00FFFF">███████</span><span style="color:#FF0000">████████████</span></div>
+<div>scatter chase            scatter chase       …</div>
+<div> </div>
+<div><span style="color:#3B4CFF">██████████████</span><span style="color:#FFFFFF">████</span>  <span style="color:#6B7288">frightened · flash @ 4 Hz</span></div>
+        </div>
+        <div style="font:400 13px/1.65 'IBM Plex Sans';color:#A8AEBF">Frightened pauses the mode clock and resumes it on expiry. Every mode edge forces a reversal — that is the tell players read as “the ghosts changed their mind”.</div>
+      </div>
+      <div style="flex:1;min-width:330px;background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:22px 24px">
+        <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.2em;color:#FFB8AE;margin-bottom:14px">AnimationState — what it owns</div>
+        <ul style="margin:0;padding-left:18px;font:400 14px/1.7 'IBM Plex Sans';color:#A8AEBF">
+          <li>One monotonic <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">tick: u64</span>. Every cycle is <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">tick % period</span> — no per-entity timers, no drift, trivially seekable for tests.</li>
+          <li>Phase accessors only: <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">mouthOpen()</span>, <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">pelletVisible()</span>, <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">frightFlash()</span>, <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">deathFrame()</span>, <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">mazeFlash()</span>.</li>
+          <li>Cutscene lock: while <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">.ready</span>, <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">.death</span> or <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">.cleared</span> runs, Game skips input and AI but keeps ticking.</li>
+          <li>Input buffer belongs to Game, not here: hold the last direction key for 250 ms and apply it the instant the tile ahead opens. This single rule is most of what makes the game feel arcade-tight.</li>
+          <li>Never use the SGR <span style="font-family:'JetBrains Mono',monospace;color:#E4E7F0">blink</span> attribute for pellets or flashes — terminal support is inconsistent and the rate is not yours to set.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 COMPONENTS -->
+  <section style="display:flex;flex-direction:column;gap:30px">
+    <div>
+      <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.3em;color:#FFB8AE;text-transform:uppercase">06 — Components</div>
+      <h2 style="font:700 26px/1.2 'JetBrains Mono',monospace;color:#FFFFFF;margin:15px 0 0">Ownership &amp; data flow</h2>
+    </div>
+
+    <div style="background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:26px 28px;white-space:pre;overflow-x:auto;font:400 13px/1.5 'JetBrains Mono',monospace;color:#6B7288">
+<span style="color:#9EA4B8">  vaxis.Loop  ─── Key / Winsize ───▶</span>                     <span style="color:#9EA4B8">terminal</span>
+<span style="color:#24245C">                                                              ▲</span>
+<span style="color:#3B4CFF">  ┌───────────────┐</span>  tick(dt)  <span style="color:#3B4CFF">┌────────────────┐</span>        <span style="color:#24245C">│</span>
+<span style="color:#3B4CFF">  │</span> <span style="color:#FFFF00">Game</span>          <span style="color:#3B4CFF">│──────────▶│</span> <span style="color:#FFFFFF">GhostAI</span>        <span style="color:#3B4CFF">│</span>        <span style="color:#24245C">│</span>
+<span style="color:#3B4CFF">  │</span> maze · dots    <span style="color:#3B4CFF">│◀──────────│</span> mode · target  <span style="color:#3B4CFF">│</span>        <span style="color:#24245C">│</span>
+<span style="color:#3B4CFF">  │</span> score · lives  <span style="color:#3B4CFF">│</span> dir/ghost <span style="color:#3B4CFF">└────────────────┘</span>        <span style="color:#24245C">│</span>
+<span style="color:#3B4CFF">  │</span> phase machine  <span style="color:#3B4CFF">│</span>                                   <span style="color:#24245C">│</span>
+<span style="color:#3B4CFF">  └───────┬───────┘</span>  tick   <span style="color:#3B4CFF">┌──────────────────┐</span>       <span style="color:#24245C">│</span>
+<span style="color:#24245C">          ├────────────────▶│</span> <span style="color:#FFFFFF">AnimationState</span>   <span style="color:#3B4CFF">│</span>       <span style="color:#24245C">│</span>
+<span style="color:#24245C">          │</span>   read-only    <span style="color:#3B4CFF">└────────┬─────────┘</span>       <span style="color:#24245C">│</span>
+<span style="color:#24245C">          ▼</span>                         <span style="color:#24245C">│</span> phases           <span style="color:#24245C">│</span> vx.render()
+<span style="color:#3B4CFF">  ┌───────────────────────────────┴──────────────┐</span>     <span style="color:#24245C">│</span>
+<span style="color:#3B4CFF">  │</span> <span style="color:#FFFFFF">Screen</span> — root window · layout mode · offsets  <span style="color:#3B4CFF">│─────┘</span>
+<span style="color:#3B4CFF">  └───┬──────────────┬────────────────┬──────────┘</span>
+<span style="color:#24245C">      ▼</span>              <span style="color:#24245C">▼</span>                <span style="color:#24245C">▼</span>
+<span style="color:#3B4CFF">  ┌────────┐   ┌───────────┐   ┌──────────────┐</span>
+<span style="color:#3B4CFF">  │</span> <span style="color:#FFFFFF">HUD</span>    <span style="color:#3B4CFF">│   │</span> <span style="color:#FFFFFF">MazeView</span>  <span style="color:#3B4CFF">│   │</span> <span style="color:#FFFFFF">Overlay</span>      <span style="color:#3B4CFF">│</span>
+<span style="color:#3B4CFF">  └────────┘   └───────────┘   └──────────────┘</span>
+<span style="color:#6B7288">  Draw layer: pure fns of (state, window). No mutation. No allocation.
+  Overlay returns an intent enum upward; it never calls into Game.</span></div>
+
+    <table style="border-collapse:collapse;width:100%">
+      <thead><tr>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">COMPONENT</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">OWNS</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 14px 10px 0;border-bottom:1px solid #24245C">READS</th>
+        <th style="text-align:left;font:500 10px/1 'JetBrains Mono';letter-spacing:.16em;color:#7F86A0;padding:0 0 10px;border-bottom:1px solid #24245C">MUST NOT</th>
+      </tr></thead>
+      <tbody>
+        <sc-for list="{{ components }}" as="c" hint-placeholder-count="6">
+          <tr>
+            <td style="font:400 13px/1.4 'JetBrains Mono';color:#FFFF00;padding:11px 14px 11px 0;border-bottom:1px solid #101033;white-space:nowrap;vertical-align:top">{{ c.name }}</td>
+            <td style="font:400 13px/1.55 'IBM Plex Sans';color:#E4E7F0;padding:11px 14px 11px 0;border-bottom:1px solid #101033;vertical-align:top">{{ c.owns }}</td>
+            <td style="font:400 13px/1.55 'IBM Plex Sans';color:#A8AEBF;padding:11px 14px 11px 0;border-bottom:1px solid #101033;vertical-align:top">{{ c.reads }}</td>
+            <td style="font:400 13px/1.55 'IBM Plex Sans';color:#7F86A0;padding:11px 0;border-bottom:1px solid #101033;vertical-align:top">{{ c.avoid }}</td>
+          </tr>
+        </sc-for>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 07 API NOTES -->
+  <sc-if value="{{ showApiNotes }}" hint-placeholder-val="{{ true }}">
+  <section style="display:flex;flex-direction:column;gap:30px">
+    <div>
+      <div style="font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.3em;color:#FFB8AE;text-transform:uppercase">07 — vaxis 0.6.0</div>
+      <h2 style="font:700 26px/1.2 'JetBrains Mono',monospace;color:#FFFFFF;margin:15px 0 0">API facts that shape this design</h2>
+    </div>
+
+    <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+      <div style="flex:1;min-width:340px;display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ apiNotes }}" as="n" hint-placeholder-count="9">
+          <div style="background:#07070F;border:1px solid #1A1A4D;border-left:2px solid #3B4CFF;border-radius:0 5px 5px 0;padding:15px 19px">
+            <div style="font:500 12.5px/1.45 'JetBrains Mono',monospace;color:#FFFFFF;margin-bottom:6px">{{ n.title }}</div>
+            <div style="font:400 13.5px/1.6 'IBM Plex Sans';color:#A8AEBF">{{ n.body }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ showZigSnippets }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;min-width:340px;background:#07070F;border:1px solid #1A1A4D;border-radius:6px;padding:22px 24px;white-space:pre;overflow-x:auto;font:400 12.5px/1.65 'JetBrains Mono',monospace;color:#A8AEBF">
+<span style="color:#6B7288">// render.zig — one frame</span>
+<span style="color:#FFB8FF">const</span> root = vx.window();
+root.clear();
+root.hideCursor();
+
+<span style="color:#6B7288">// canvas: 28 x 36, centered, saturating math</span>
+<span style="color:#FFB8FF">const</span> canvas = root.child(.{
+    .x_off = <span style="color:#FFB8FF">@intCast</span>((root.width -| <span style="color:#FFFF00">28</span>) / <span style="color:#FFFF00">2</span>),
+    .y_off = <span style="color:#FFB8FF">@intCast</span>((root.height -| <span style="color:#FFFF00">36</span>) / <span style="color:#FFFF00">2</span>),
+    .width = <span style="color:#FFFF00">28</span>, .height = <span style="color:#FFFF00">36</span>,
+});
+
+<span style="color:#6B7288">// HUD text must outlive render(): vaxis stores a SLICE
+// of your bytes, it does not copy them.</span>
+_ = canvas.printSegment(
+    .{ .text = self.hud.score_buf[<span style="color:#FFFF00">0</span>..self.hud.score_len],
+       .style = .{ .fg = hud_fg, .bold = <span style="color:#FFB8FF">true</span> } },
+    .{ .col_offset = <span style="color:#FFFF00">1</span>, .row_offset = <span style="color:#FFFF00">1</span>, .wrap = .none },
+);
+
+<span style="color:#6B7288">// maze: pre-resolved glyph table, one writeCell per tile</span>
+<span style="color:#FFB8FF">const</span> play = canvas.child(.{ .y_off = <span style="color:#FFFF00">3</span>, .height = <span style="color:#FFFF00">31</span> });
+<span style="color:#FFB8FF">for</span> (<span style="color:#FFFF00">0</span>..<span style="color:#FFFF00">31</span>) |r| <span style="color:#FFB8FF">for</span> (<span style="color:#FFFF00">0</span>..<span style="color:#FFFF00">28</span>) |c| {
+    <span style="color:#FFB8FF">const</span> t = self.maze.tiles[r][c];
+    <span style="color:#FFB8FF">const</span> cell: vaxis.Cell = <span style="color:#FFB8FF">switch</span> (t) {
+        .wall  =&gt; .{ .char = .{ .grapheme = wall_glyph[r][c], .width = <span style="color:#FFFF00">1</span> },
+                     .style = .{ .fg = wall_fg } },
+        .dot   =&gt; .{ .char = .{ .grapheme = <span style="color:#FFB8AE">"·"</span>, .width = <span style="color:#FFFF00">1</span> },
+                     .style = .{ .fg = dot_fg } },
+        .empty =&gt; .{},
+    };
+    play.writeCell(<span style="color:#FFB8FF">@intCast</span>(c), <span style="color:#FFB8FF">@intCast</span>(r), cell);
+};
+
+<span style="color:#6B7288">// centering a string: measure first, commit = false</span>
+<span style="color:#FFB8FF">const</span> m = win.printSegment(seg, .{ .commit = <span style="color:#FFB8FF">false</span>, .wrap = .none });
+_ = win.printSegment(seg, .{
+    .col_offset = (win.width -| m.col) / <span style="color:#FFFF00">2</span>,
+    .row_offset = row, .wrap = .none,
+});
+
+<span style="color:#6B7288">// overlay card: double-line custom border</span>
+<span style="color:#FFB8FF">const</span> card = canvas.child(.{
+    .x_off = <span style="color:#FFFF00">2</span>, .y_off = <span style="color:#FFFF00">14</span>, .width = <span style="color:#FFFF00">24</span>, .height = <span style="color:#FFFF00">9</span>,
+    .border = .{ .where = .all, .style = .{ .fg = alert },
+        <span style="color:#6B7288">// tl, horiz, tr, vert, br, bl  ← note the order</span>
+        .glyphs = .{ .custom = .{ <span style="color:#FFB8AE">"╔"</span>, <span style="color:#FFB8AE">"═"</span>, <span style="color:#FFB8AE">"╗"</span>, <span style="color:#FFB8AE">"║"</span>, <span style="color:#FFB8AE">"╝"</span>, <span style="color:#FFB8AE">"╚"</span> } },
+    },
+});
+card.fill(.{ .style = .{ .bg = black } });
+<span style="color:#6B7288">// card is the INNER window now: 22 x 7</span></div>
+      </sc-if>
+    </div>
+  </section>
+  </sc-if>
+
+  <footer style="border-top:1px solid #1A1A4D;padding-top:20px;font:400 12px/1.8 'JetBrains Mono',monospace;color:#4A5068;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap">
+    <div>PAC·ZIG — TUI design specification</div>
+    <div>28 × 34 cells · zig 0.16.0 · vaxis 0.6.0</div>
+  </footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;showZigSnippets&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;showApiNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;showTitleScreen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const P = { peach: "#FFB8AE", blue: "#3B4CFF", yellow: "#FFFF00", white: "#FFFFFF", pink: "#FFB8FF", cyan: "#00FFFF", orange: "#FFB852", red: "#FF0000", dim: "#9EA4B8" };
+    return {
+      showZigSnippets: this.props.showZigSnippets ?? true,
+      showApiNotes: this.props.showApiNotes ?? true,
+      showTitleScreen: this.props.showTitleScreen ?? true,
+
+      sizes: [
+        { size: "< 30 × 36", mode: "too-small", color: "#FF0000", note: "Blocking notice: “TERMINAL TOO SMALL — NEED 30×36, GOT 24×20”, live-updating on every winsize event. Never render a clipped maze." },
+        { size: "30 × 36", mode: "standard", color: "#4CFF4C", note: "The reference screen. 1 cell per tile; the maze reads ~2× tall, which is the accepted TUI look for line-art mazes." },
+        { size: "60 × 38", mode: "wide", color: "#4CFF4C", note: "2 cells per tile — 56-col maze, near-arcade proportions. Default whenever it fits; this is the one to screenshot." },
+        { size: "80 × 40", mode: "wide + rail", color: "#3B4CFF", note: "Wide maze plus a 20-col right rail: ghost roster with live mode, dots-remaining meter, combo log, key hints." },
+        { size: "≥ 120 × 45", mode: "wide + rail", color: "#3B4CFF", note: "Same as above, centered, extra columns stay black. Never stretch the maze or add decorative chrome to fill space." }
+      ],
+
+      palette: [
+        { role: "background", hex: "#000000", idx: "16", cr: "—", note: "Pure black, inherited from the terminal. Do not paint it on maze cells." },
+        { role: "wall", hex: "#3B4CFF", idx: "63", cr: "4.6:1", note: "Shipping wall colour: arcade hue, raised luminance so it clears 4.5:1." },
+        { role: "wall (arcade)", hex: "#2121DE", idx: "20", cr: "2.5:1", note: "Authentic cabinet blue. Opt-in --theme=arcade only; documented as low contrast." },
+        { role: "ghost door", hex: "#FFB8FF", idx: "219", cr: "12.6:1", note: "Drawn with dim = true so it recedes behind the walls it interrupts." },
+        { role: "dot", hex: "#FFB8AE", idx: "224", cr: "11.5:1", note: "Peach — reads as food, and keeps white free for eyes and HUD values." },
+        { role: "power pellet", hex: "#FFB8AE", idx: "224", cr: "11.5:1", note: "Same hue as dots, bigger glyph, 5 Hz blink. Size and motion carry the difference." },
+        { role: "pac-man", hex: "#FFFF00", idx: "226", cr: "19.6:1", note: "Brightest thing on screen. Reserved for Pac, lives icons and READY!." },
+        { role: "blinky", hex: "#FF0000", idx: "196", cr: "5.3:1", note: "Contrast floor of the palette — never dim, never on a coloured bg." },
+        { role: "pinky", hex: "#FFB8FF", idx: "219", cr: "12.6:1", note: "Shares the door hue; they never occupy the same cell." },
+        { role: "inky", hex: "#00FFFF", idx: "51", cr: "16.7:1", note: "" },
+        { role: "clyde", hex: "#FFB852", idx: "215", cr: "11.0:1", note: "Warm orange, kept away from Pac's yellow by luminance and glyph." },
+        { role: "frightened", hex: "#3B4CFF", idx: "63", cr: "4.6:1", note: "Deliberately identical to walls — a frightened ghost should feel like scenery." },
+        { role: "fright flash", hex: "#FFFFFF", idx: "231", cr: "21:1", note: "Alternates with the above at 4 Hz for the final 2 seconds." },
+        { role: "ghost eyes", hex: "#FFFFFF", idx: "231", cr: "21:1", note: "The eaten-ghost glyph. White appears nowhere else in the maze." },
+        { role: "hud value", hex: "#FFFFFF", idx: "231", cr: "21:1", note: "Scores, level, high score." },
+        { role: "hud label", hex: "#9EA4B8", idx: "248", cr: "7.4:1", note: "1UP / HIGH SCORE / LVL and all key hints." },
+        { role: "alert", hex: "#FF0000", idx: "196", cr: "5.3:1", note: "GAME OVER text and its overlay frame." },
+        { role: "success", hex: "#4CFF4C", idx: "82", cr: "15.9:1", note: "Level-cleared card and the dots-remaining meter." }
+      ],
+
+      glyphs: [
+        { el: "wall", glyph: "╭ ─ ╮ │ ╰ ╯", cp: "U+256D U+2500 U+256E U+2502 U+2570 U+256F", ascii: "+ - |", use: "Corridor outlines, rounded corners. Resolved from the 4 neighbours at level load.", color: P.blue },
+        { el: "wall junction", glyph: "├ ┤ ┬ ┴ ┼", cp: "U+251C…U+253C", ascii: "+", use: "Only where wall structures touch. A clean maze layout barely needs these.", color: P.blue },
+        { el: "ghost door", glyph: "╌", cp: "U+254C", ascii: "-", use: "Two cells wide, pink, dim, passable by ghosts only.", color: P.pink },
+        { el: "dot", glyph: "·", cp: "U+00B7", ascii: ".", use: "Standard food, 10 pts. Middle dot, not bullet — bullet is too heavy at 1 cell.", color: P.peach },
+        { el: "power pellet", glyph: "●", cp: "U+25CF", ascii: "o", use: "50 pts, four per maze, blinks at 5 Hz.", color: P.peach },
+        { el: "pac — right/left", glyph: "ᗧ  ᗤ", cp: "U+15E7 / U+15E4", ascii: "> <", use: "Canadian syllabics: the only reliably width-1 open-mouth glyphs.", color: P.yellow },
+        { el: "pac — up/down", glyph: "◓  ◒", cp: "U+25D3 / U+25D2", ascii: "^ v", use: "Half-filled circles read as a vertical mouth. Verify width at startup.", color: P.yellow },
+        { el: "pac — closed", glyph: "●", cp: "U+25CF", ascii: "O", use: "Second mouth frame for all four directions, and the idle/blocked glyph.", color: P.yellow },
+        { el: "ghost", glyph: "ᗣ", cp: "U+15E3", ascii: "M", use: "All four ghosts; colour is the only difference. Frightened uses the same glyph.", color: P.cyan },
+        { el: "ghost — eaten", glyph: "\"", cp: "U+0022", ascii: "\"", use: "Eyes returning to the house. Plain ASCII quote — always width 1.", color: P.white },
+        { el: "fruit", glyph: "◆", cp: "U+25C6", ascii: "*", use: "Bonus item and the HUD fruit history, tinted per fruit (cherry → key).", color: P.red },
+        { el: "life", glyph: "ᗧ", cp: "U+15E7", ascii: ">", use: "One per spare life, bottom-left, yellow. Max 5 shown then “×7”.", color: P.yellow },
+        { el: "title type", glyph: "█ ▀ ▄", cp: "U+2588 U+2580 U+2584", ascii: "#", use: "Three-row block letters for the title only. Never in the HUD.", color: P.yellow },
+        { el: "overlay frame", glyph: "╔ ═ ╗ ║ ╚ ╝", cp: "U+2554…U+255D", ascii: "= |", use: "Reserved exclusively for overlay cards, so double lines always mean chrome.", color: P.dim },
+        { el: "meter", glyph: "█ ░", cp: "U+2588 / U+2591", ascii: "# -", use: "Dots-remaining bar in the wide-mode rail.", color: "#4CFF4C" }
+      ],
+
+      motion: [
+        { state: "pac move", timing: "8 tiles/s", glyphs: "ᗧ", color: P.yellow, note: "125 ms per tile. Corners are free (no slowdown); a queued key applies the moment the tile ahead opens." },
+        { state: "input buffer", timing: "250 ms", glyphs: "↑↓←→", color: P.dim, note: "Last direction key is held and re-tried each tick. Without this the game feels broken, not hard." },
+        { state: "mouth", timing: "7.5 Hz", glyphs: "ᗧ ●", color: P.yellow, note: "Every 16 sim ticks. Freezes on the closed glyph when Pac is blocked by a wall." },
+        { state: "dot eaten", timing: "instant", glyphs: "·", color: P.peach, note: "+10, dots_left--, HUD value repaints the same frame. No particle, no flash — the arcade doesn't." },
+        { state: "pellet blink", timing: "5 Hz", glyphs: "● ", color: P.peach, note: "Colour swap driven by your own tick. Never the SGR blink attribute." },
+        { state: "frightened", timing: "6 s → 1 s by lvl 9", glyphs: "ᗣ", color: P.blue, note: "All ghosts reverse, drop to 5 tiles/s, and the scatter/chase clock pauses." },
+        { state: "fright flash", timing: "last 2 s @ 4 Hz", glyphs: "ᗣ ᗣ", color: P.white, note: "#3B4CFF ↔ #FFFFFF. The only warning the player gets, so it must be unmissable." },
+        { state: "ghost eaten", timing: "1 s freeze", glyphs: "\"", color: P.white, note: "200/400/800/1600 chip drawn at the ghost's tile; everything else pauses, then eyes run home at 12 tiles/s." },
+        { state: "death", timing: "11 frames / 1.4 s", glyphs: "● ◓ ◒ ○ ◌ ✳", color: P.yellow, note: "Ghosts hidden from frame 0. Final frame red, then 1 s black, then READY." },
+        { state: "ready", timing: "4.5 s lvl 1 · 2 s after", glyphs: "READY!", color: P.yellow, note: "Yellow text in the house gap. Input locked, ghosts parked, dots already drawn." },
+        { state: "level clear", timing: "4 flashes @ 3 Hz", glyphs: "╭─╮", color: P.white, note: "Walls alternate #3B4CFF ↔ #FFFFFF, then 1 s black. The only time walls change colour." },
+        { state: "render", timing: "≤ 30 fps", glyphs: "—", color: P.dim, note: "120 Hz fixed sim step; skip the render entirely when no cell changed. Typical frame touches < 40 cells." }
+      ],
+
+      components: [
+        { name: "Game", owns: "Maze grid, dots remaining, score, lives, level, phase state machine (ready/play/death/cleared/over), input buffer", reads: "Key events from the loop, GhostAI decisions, AnimationState phases", avoid: "Know that vaxis exists. It draws nothing and imports no rendering type." },
+        { name: "GhostAI", owns: "Per-ghost mode (scatter/chase/frightened/eyes), target tile, house dot counters, elroy escalation, forced reversals", reads: "Maze walls, Pac tile + direction, global mode clock", avoid: "Mutate the maze, score, or anything a ghost doesn't own." },
+        { name: "AnimationState", owns: "One monotonic tick, all derived phases, cutscene locks", reads: "Nothing — it is a pure function of tick", avoid: "Hold game rules or per-entity timers." },
+        { name: "Screen", owns: "Root window, layout mode from terminal size, centering offsets, canvas + child windows", reads: "Terminal size / winsize events", avoid: "Allocate per frame, or cache windows across a resize." },
+        { name: "HUD", owns: "Top two rows, bottom row, and the score/level format buffers (must outlive render)", reads: "Game score, lives, level, dots remaining, fruit history", avoid: "Format into a stack buffer — vaxis keeps the slice, not the bytes." },
+        { name: "Overlay", owns: "Title, pause, game-over, level-clear cards; menu selection index", reads: "Game phase, AnimationState, high-score store", avoid: "Run game logic. It returns an intent enum (start/resume/retry/quit) upward." },
+        { name: "MazeView", owns: "Pre-resolved wall glyph table, entity draw order (dots → pellets → fruit → ghosts → Pac)", reads: "Maze, entity positions, palette, AnimationState", avoid: "Recompute wall glyphs per frame, or decide anything about gameplay." }
+      ],
+
+      apiNotes: [
+        { title: "Color is a tagged union", body: "Cell.Color = union(enum){ default, index: u8, rgb: [3]u8 }. Build with .{ .rgb = .{ r, g, b } } or Color.rgbFromUint(0xFFB8AE). Store both a truecolor and an index per role and resolve once at startup from vx.caps.rgb — branching per cell costs you the frame budget." },
+        { title: "print stores a slice, not a copy", body: "Window.print sets .grapheme = grapheme.bytes(segment.text), and the frame flushes after render() returns. Every dynamic string — score, level, timers — must live in a buffer owned by Game/HUD. A stack buffer dangles and renders as garbage or U+FFFD, intermittently." },
+        { title: "printSegment returns geometry", body: "It is print(&.{segment}, opts) and returns PrintResult{ col, row, overflow }. Call it with .commit = false to measure the wrapped extent, then print for real at (width - col) / 2. That is how you centre READY! or a menu label without counting graphemes by hand." },
+        { title: "child() with a border returns the inner window", body: "win.child(.{ .width = 28, .height = 36, .border = .{ .where = .all } }) hands you 26 × 34 to draw in — the border eats a cell on each side. Budget for it, or draw the frame yourself with writeCell (which is what the maze does: its outer wall IS the frame)." },
+        { title: "Custom border glyph order is unusual", body: ".glyphs = .{ .custom = .{ top_left, horizontal, top_right, vertical, bottom_right, bottom_left } } — the last two are reversed from reading order. Built-ins are .single_rounded (╭─╮│╯╰) and .single_square. The rounded set is exactly the maze vocabulary." },
+        { title: "writeCell clips silently", body: "Out-of-bounds writes return without error or panic — including negative absolute offsets from a nested child. Bugs surface as missing dots rather than crashes, so assert maze bounds in debug builds and draw the maze into a child window sized exactly 28 × 31." },
+        { title: "Set Character.width explicitly", body: "Cell.Character{ .grapheme = \"ᗧ\", .width = 1 }. Leaving width = 0 makes vaxis measure the glyph at render time, every frame, for every cell. Verify the whole glyph set once with win.gwidth() at startup and fall back to ASCII if anything reports ≠ 1." },
+        { title: "Offsets are i17, sizes u16", body: "Window.x_off/y_off are signed (children can sit off-screen and clip); width/height are u16. Centre with saturating arithmetic — (root.width -| 28) / 2 — because a 20-column terminal underflows an unsigned subtract and wraps to an enormous offset." },
+        { title: "Let vaxis do the diffing", body: "clear() on a full-width window is a single memset, and vx.render() already diffs against the previous frame and emits only changed cells. Redraw the whole board each frame and gate on “did any game state change” — do not hand-roll dirty rectangles." },
+        { title: "Never use SGR blink", body: "Cell.Style.blink exists but terminal support and rate are inconsistent and out of your control. Pellet blink, fright flash and the level-clear flash all come from AnimationState's tick and a colour swap." }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
