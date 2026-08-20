@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PAC·ZIG — Responsive TUI Pac-Man</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="site-header">
+      <div class="header-left">
+        <div class="reference-line">Reference prototype · port me to zig</div>
+        <h1 class="site-title">PAC<span>·</span>ZIG <span class="subtitle-text">responsive TUI</span></h1>
+      </div>
+      <div class="header-right">
+        <div>LIVE</div>
+        <div>Terminal ▸ zsh</div>
+      </div>
+    </header>
+
+    <section class="controls">
+      <div class="control-group">
+        <span class="control-label">Layout</span>
+        <div class="segmented" id="layout-toggle">
+          <button class="seg active" data-mode="standard">Standard</button>
+          <button class="seg" data-mode="wide">Wide</button>
+          <button class="seg" data-mode="rail">Wide + Rail</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Speed</span>
+        <div class="segmented" id="speed-toggle">
+          <button class="seg active" data-speed="1">1×</button>
+          <button class="seg" data-speed="2">2×</button>
+          <button class="seg" data-speed="4">4×</button>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <button class="primary-btn" id="play-btn">Play/Resume</button>
+    </section>
+
+    <section class="layout-preview">
+      <div class="preview-card" data-preview="standard">
+        <div class="preview-view" id="preview-standard"></div>
+        <div class="preview-caption">Default. Maze fills usable width. HUD above, ghosts below.</div>
+      </div>
+      <div class="preview-card" data-preview="wide">
+        <div class="preview-view" id="preview-wide"></div>
+        <div class="preview-caption">2 cells per tile — near-arcade proportions. Preferred default.</div>
+      </div>
+      <div class="preview-card" data-preview="rail">
+        <div class="preview-view" id="preview-rail"></div>
+        <div class="preview-caption">Adds a rail: ghost roster, dots meter, mode, keys.</div>
+      </div>
+    </section>
+
+    <section class="play-area">
+      <div class="terminal-titlebar">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+        <span class="term-label">—  zsh</span>
+      </div>
+      <div class="terminal-viewport" id="game-viewport"></div>
+      <div class="play-note">Maze is a fixed 31 × 28 tile grid. Walls draw as line art resolved from neighbours. It never scales or stretches.</div>
+    </section>
+
+    <section class="layout-modes">
+      <h2 class="section-title">Layout Modes</h2>
+      <div class="mode-cards">
+        <div class="mode-card">
+          <div class="mode-name"><span class="mode-dot ok"></span>Standard</div>
+          <div class="mode-range">< 40 cols</div>
+          <div class="mode-note">1 cell per tile. The maze reads tall and narrow; the HUD keeps the same rows above and below. The minimal footprint that still shows a complete, unclipped board.</div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-name"><span class="mode-dot ok"></span>Wide</div>
+          <div class="mode-range">40 – 79 cols</div>
+          <div class="mode-note">2 cells per tile — near-arcade proportions. The preferred default. The maze reads much closer to its original 28 × 31 aspect ratio without any stretching of the tiles themselves.</div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-name"><span class="mode-dot wall"></span>Wide + Rail</div>
+          <div class="mode-range">80+ cols</div>
+          <div class="mode-note">Adds a 20-column rail to the right: a live ghost roster, a dots-remaining meter, the current scatter/chase mode, and key hints. The maze itself is unchanged.</div>
+        </div>
+      </div>
+      <p class="contract-note">The maze never scales or stretches. Only three things change with size: cells-per-tile, whether the rail exists, and the centering offsets. Anything smaller than the minimum shows a live notice instead of a clipped board.</p>
+    </section>
+
+    <section class="palette">
+      <h2 class="section-title">Palette</h2>
+      <div class="palette-grid" id="palette-grid"></div>
+    </section>
+
+    <footer class="site-footer">
+      Built from the Claude Design artifact. Maze dimensions: 31 × 28 tiles.
+      <span class="foot-sep">·</span>
+      Terminal theme, truecolor, monospace.
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
